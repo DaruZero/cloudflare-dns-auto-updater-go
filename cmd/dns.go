@@ -125,7 +125,7 @@ func (dns *Dns) GetCurrentIp() string {
 	for {
 		client := http.Client{}
 
-		req, err := http.NewRequest("GET", "https://api.ipify.org", nil)
+		req, err := http.NewRequest("GET", "http://api.ipify.org", nil)
 		if err != nil {
 			zap.S().Fatal(err)
 		}
