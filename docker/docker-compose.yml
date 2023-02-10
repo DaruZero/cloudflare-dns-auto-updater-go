@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  app:
+    image: daruzero/cfautoupdater-go:latest
+    env_file:
+      - .env
+    restart: unless-stopped
