@@ -83,7 +83,7 @@ func (dns *Dns) GetZoneId(zoneName string) string {
 	}
 
 	if res.StatusCode != 200 {
-		zap.S().Fatal("Error getting zone id. HTTP status code: ", res.StatusCode)
+		zap.S().Fatalf("Error getting zone id. HTTP status code: %d", res.StatusCode)
 	}
 
 	bodyBytes, err := io.ReadAll(res.Body)
@@ -109,7 +109,9 @@ func (dns *Dns) GetZoneId(zoneName string) string {
 		zap.S().Fatal(err)
 	}
 
-	zap.S().Debugf("Response body: %+v", resBody)
+	if !resBody.Success {
+		zap.S().Fatalf("Error getting zone id. Response body: %s", string(bodyBytes))
+	}
 
 	for _, z := range resBody.Result {
 		if z.Name == zoneName {
@@ -125,8 +127,8 @@ func (dns *Dns) GetZoneId(zoneName string) string {
 // GetCurrentIp gets the current ip address
 func (dns *Dns) GetCurrentIp() string {
 	zap.S().Info("Getting current ip")
-	for {
 
+	for {
 		req, err := http.NewRequest("GET", "https://api.ipify.org", nil)
 		if err != nil {
 			zap.S().Fatal(err)
@@ -151,7 +153,6 @@ func (dns *Dns) GetCurrentIp() string {
 			zap.S().Fatal(err)
 		}
 
-		zap.S().Debugf("Response body: %s", string(bodyBytes))
 		zap.S().Info("Successfully got current ip")
 
 		return string(bodyBytes)
@@ -180,7 +181,7 @@ func (dns *Dns) GetRecords() []Record {
 	}
 
 	if res.StatusCode != 200 {
-		zap.S().Fatal("Error getting records")
+		zap.S().Fatalf("Error getting records. HTTP status code: %d", res.StatusCode)
 	}
 
 	bodyBytes, err := io.ReadAll(res.Body)
@@ -203,7 +204,9 @@ func (dns *Dns) GetRecords() []Record {
 		zap.S().Fatal(err)
 	}
 
-	zap.S().Debugf("Response body: %+v", resBody)
+	if !resBody.Success {
+		zap.S().Fatalf("Error getting records. Response body: %s", string(bodyBytes))
+	}
 
 	if dns.Cfg.RecordId != "" {
 		for _, record := range resBody.Result {
@@ -250,7 +253,7 @@ func (dns *Dns) UpdateRecords() (updatedRecords []string, updated bool) {
 			}
 
 			if res.StatusCode != 200 {
-				zap.S().Fatal("Error updating records")
+				zap.S().Fatalf("Error updating records. HTTP status code: %d", res.StatusCode)
 			}
 
 			bodyBytes, err := io.ReadAll(res.Body)
@@ -273,11 +276,13 @@ func (dns *Dns) UpdateRecords() (updatedRecords []string, updated bool) {
 				zap.S().Fatal(err)
 			}
 
+			if !resBody.Success {
+				zap.S().Fatalf("Error updating records. Response body: %s", string(bodyBytes))
+			}
+
 			updatedRecords = append(updatedRecords, record.Name)
 
-			zap.S().Debugf("Response body: %+v", resBody)
-
-			zap.S().Info("Updated record ", record.Name, " to ", resBody.Result.Content)
+			zap.S().Infof("Updated record %s", record.Name)
 		}
 	}
 
