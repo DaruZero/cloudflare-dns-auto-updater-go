@@ -10,10 +10,11 @@ import (
 )
 
 type Dns struct {
-	Cfg       *Config
-	CurrentIp string
-	ZoneId    string
-	Records   []Record
+	Cfg        *Config
+	CurrentIp  string
+	ZoneId     string
+	Records    []Record
+	HttpClient *http.Client
 }
 
 type Record struct {
@@ -44,6 +45,13 @@ func NewDns(cfg *Config) *Dns {
 		Cfg: cfg,
 	}
 
+	tr := &http.Transport{
+		MaxIdleConns:       10,
+		IdleConnTimeout:    30 * time.Second,
+		DisableCompression: true,
+	}
+	dns.HttpClient = &http.Client{Transport: tr}
+
 	if cfg.ZoneId != "" {
 		dns.ZoneId = cfg.ZoneId
 	} else {
@@ -61,7 +69,6 @@ func NewDns(cfg *Config) *Dns {
 func (dns *Dns) GetZoneId(zoneName string) string {
 	zap.S().Infof("Getting zone id for %s", zoneName)
 	zoneId := ""
-	client := http.Client{}
 
 	req, err := http.NewRequest("GET", "https://api.cloudflare.com/client/v4/zones", nil)
 	if err != nil {
@@ -74,7 +81,7 @@ func (dns *Dns) GetZoneId(zoneName string) string {
 
 	zap.S().Debugf("Sending request to %s", req.URL.String())
 
-	res, err := client.Do(req)
+	res, err := dns.HttpClient.Do(req)
 	if err != nil {
 		zap.S().Fatal(err)
 	}
@@ -123,16 +130,15 @@ func (dns *Dns) GetZoneId(zoneName string) string {
 func (dns *Dns) GetCurrentIp() string {
 	zap.S().Info("Getting current ip")
 	for {
-		client := http.Client{}
 
-		req, err := http.NewRequest("GET", "http://api.ipify.org", nil)
+		req, err := http.NewRequest("GET", "https://api.ipify.org", nil)
 		if err != nil {
 			zap.S().Fatal(err)
 		}
 
 		zap.S().Debugf("Sending request to %s", req.URL.String())
 
-		res, err := client.Do(req)
+		res, err := dns.HttpClient.Do(req)
 		if err != nil {
 			zap.S().Fatal(err)
 		}
@@ -158,7 +164,6 @@ func (dns *Dns) GetCurrentIp() string {
 // GetRecords gets all the records for the zone
 func (dns *Dns) GetRecords() []Record {
 	zap.S().Info("Getting records")
-	client := http.Client{}
 
 	req, err := http.NewRequest("GET", "https://api.cloudflare.com/client/v4/zones/"+dns.ZoneId+"/dns_records", nil)
 	if err != nil {
@@ -171,7 +176,7 @@ func (dns *Dns) GetRecords() []Record {
 
 	zap.S().Debugf("Sending request to %s", req.URL.String())
 
-	res, err := client.Do(req)
+	res, err := dns.HttpClient.Do(req)
 	if err != nil {
 		zap.S().Fatal(err)
 	}
@@ -227,7 +232,6 @@ func (dns *Dns) UpdateRecords() (updatedRecords []string, updated bool) {
 		if record.Content != dns.CurrentIp {
 			zap.S().Infof("Updating record %s", record.Name)
 			updated = true
-			client := http.Client{}
 
 			payload := strings.NewReader(`{"content":"` + dns.CurrentIp)
 			req, err := http.NewRequest("PUT", "https://api.cloudflare.com/client/v4/zones/"+dns.ZoneId+"/dns_records/"+record.Id, payload)
@@ -241,7 +245,7 @@ func (dns *Dns) UpdateRecords() (updatedRecords []string, updated bool) {
 
 			zap.S().Debugf("Sending request to %s", req.URL.String())
 
-			res, err := client.Do(req)
+			res, err := dns.HttpClient.Do(req)
 			if err != nil {
 				zap.S().Fatal(err)
 			}
