@@ -74,7 +74,8 @@ func (dns *Dns) GetZoneId(zoneName string) string {
 	req.Header.Set("X-Auth-Key", dns.Cfg.AuthKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	zap.S().Debugf("Sending request to %s", req.URL.String())
+	url := SanitizeString(req.URL.String())
+	zap.S().Debugf("Sending request to %s", url)
 
 	res, err := dns.HttpClient.Do(req)
 	if err != nil {
@@ -131,7 +132,8 @@ func (dns *Dns) GetCurrentIp() string {
 			zap.S().Fatal(err)
 		}
 
-		zap.S().Debugf("Sending request to %s", req.URL.String())
+		url := SanitizeString(req.URL.String())
+		zap.S().Debugf("Sending request to %s", url)
 
 		res, err := dns.HttpClient.Do(req)
 		if err != nil {
@@ -169,7 +171,8 @@ func (dns *Dns) GetRecords() []Record {
 	req.Header.Set("X-Auth-Key", dns.Cfg.AuthKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	zap.S().Debugf("Sending request to %s", req.URL.String())
+	url := SanitizeString(req.URL.String())
+	zap.S().Debugf("Sending request to %s", url)
 
 	res, err := dns.HttpClient.Do(req)
 	if err != nil {
@@ -238,7 +241,8 @@ func (dns *Dns) UpdateRecords() (updatedRecords []string, updated bool) {
 			req.Header.Set("X-Auth-Key", dns.Cfg.AuthKey)
 			req.Header.Set("Content-Type", "application/json")
 
-			zap.S().Debugf("Sending request to %s", req.URL.String())
+			url := SanitizeString(req.URL.String())
+			zap.S().Debugf("Sending request to %s", url)
 
 			res, err := dns.HttpClient.Do(req)
 			if err != nil {

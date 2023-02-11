@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // GetEnv returns the value of the environment variable
@@ -19,8 +20,6 @@ func GetEnv(name string, required bool, fallback string) string {
 	if value == "" {
 		value = fallback
 	}
-
-	zap.S().Debugf("Environment variable %s loaded: %s", name, value)
 
 	return value
 }
@@ -38,12 +37,16 @@ func GetEnvAsInt(name string, required bool, fallback int) int {
 		return fallback
 	}
 
-	zap.S().Debugf("Environment variable %s loaded: %s", name, value)
-
 	i, err := strconv.Atoi(value)
 	if err != nil {
 		log.Fatalf("Environment variable %s must be an integer", name)
 	}
 
 	return i
+}
+
+func SanitizeString(s string) string {
+	s = strings.Replace(s, "\n", "", -1)
+	s = strings.Replace(s, "\r", "", -1)
+	return s
 }
