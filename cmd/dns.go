@@ -82,10 +82,6 @@ func (dns *Dns) GetZoneId(zoneName string) string {
 		zap.S().Fatal(err)
 	}
 
-	if res.StatusCode != 200 {
-		zap.S().Fatalf("Error getting zone id. HTTP status code: %d", res.StatusCode)
-	}
-
 	bodyBytes, err := io.ReadAll(res.Body)
 	if err != nil {
 		zap.S().Fatal(err)
@@ -109,8 +105,8 @@ func (dns *Dns) GetZoneId(zoneName string) string {
 		zap.S().Fatal(err)
 	}
 
-	if !resBody.Success {
-		zap.S().Fatalf("Error getting zone id. Response body: %s", string(bodyBytes))
+	if !resBody.Success || res.StatusCode != 200 {
+		zap.S().Fatalf("Error getting zone id. HTTP status code: %d. Response body: %s", res.StatusCode, string(bodyBytes))
 	}
 
 	for _, z := range resBody.Result {
@@ -180,10 +176,6 @@ func (dns *Dns) GetRecords() []Record {
 		zap.S().Fatal(err)
 	}
 
-	if res.StatusCode != 200 {
-		zap.S().Fatalf("Error getting records. HTTP status code: %d", res.StatusCode)
-	}
-
 	bodyBytes, err := io.ReadAll(res.Body)
 	if err != nil {
 		zap.S().Fatal(err)
@@ -204,8 +196,8 @@ func (dns *Dns) GetRecords() []Record {
 		zap.S().Fatal(err)
 	}
 
-	if !resBody.Success {
-		zap.S().Fatalf("Error getting records. Response body: %s", string(bodyBytes))
+	if !resBody.Success || res.StatusCode != 200 {
+		zap.S().Fatalf("Error getting records. HTTP status code: %d. Response body: %s", res.StatusCode, string(bodyBytes))
 	}
 
 	if dns.Cfg.RecordId != "" {
@@ -252,10 +244,6 @@ func (dns *Dns) UpdateRecords() (updatedRecords []string, updated bool) {
 				zap.S().Fatal(err)
 			}
 
-			if res.StatusCode != 200 {
-				zap.S().Fatalf("Error updating records. HTTP status code: %d", res.StatusCode)
-			}
-
 			bodyBytes, err := io.ReadAll(res.Body)
 			if err != nil {
 				zap.S().Fatal(err)
@@ -276,8 +264,8 @@ func (dns *Dns) UpdateRecords() (updatedRecords []string, updated bool) {
 				zap.S().Fatal(err)
 			}
 
-			if !resBody.Success {
-				zap.S().Fatalf("Error updating records. Response body: %s", string(bodyBytes))
+			if !resBody.Success || res.StatusCode != 200 {
+				zap.S().Fatalf("Error updating records. HTTP status code: %d. Response body: %s", res.StatusCode, string(bodyBytes))
 			}
 
 			updatedRecords = append(updatedRecords, record.Name)
