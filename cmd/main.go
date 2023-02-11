@@ -35,6 +35,8 @@ func main() {
 					zap.S().Errorf("Error sending email: %s", err)
 				}
 			}
+		} else {
+			zap.S().Info("No records updated")
 		}
 
 		zap.S().Infof("Sleeping for %d seconds", cfg.CheckInterval)

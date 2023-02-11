@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"go.uber.org/zap"
 	"io"
 	"net/http"
@@ -40,7 +41,7 @@ type Record struct {
 
 // NewDns creates a new Dns struct instance
 func NewDns(cfg *Config) *Dns {
-	zap.S().Info("Creating new Dns struct")
+	zap.S().Debug("Creating new Dns struct")
 	dns := &Dns{
 		Cfg: cfg,
 	}
@@ -210,9 +211,20 @@ func (dns *Dns) GetRecords() []Record {
 		zap.S().Fatal("Record id not found")
 	}
 
+	var records []Record
+	for _, record := range resBody.Result {
+		if record.Type == "A" || record.Type == "AAAA" {
+			records = append(records, record)
+		}
+	}
+
+	if len(records) == 0 {
+		zap.S().Fatal("No A records found")
+	}
+
 	zap.S().Info("Successfully got records")
 
-	return resBody.Result
+	return records
 }
 
 // UpdateRecords updates the records with the current ip
@@ -226,7 +238,7 @@ func (dns *Dns) UpdateRecords() (updatedRecords []string, updated bool) {
 			zap.S().Infof("Updating record %s", record.Name)
 			updated = true
 
-			payload := strings.NewReader(`{"content":"` + dns.CurrentIp)
+			payload := strings.NewReader(fmt.Sprintf(`{"content":"%s","name":"%s","ttl":"%d"}`, dns.CurrentIp, record.Name, record.Ttl))
 			req, err := http.NewRequest("PUT", "https://api.cloudflare.com/client/v4/zones/"+dns.ZoneId+"/dns_records/"+record.Id, payload)
 			if err != nil {
 				zap.S().Fatal(err)
