@@ -211,9 +211,20 @@ func (dns *Dns) GetRecords() []Record {
 		zap.S().Fatal("Record id not found")
 	}
 
+	var records []Record
+	for _, record := range resBody.Result {
+		if record.Type == "A" || record.Type == "AAAA" {
+			records = append(records, record)
+		}
+	}
+
+	if len(records) == 0 {
+		zap.S().Fatal("No A records found")
+	}
+
 	zap.S().Info("Successfully got records")
 
-	return resBody.Result
+	return records
 }
 
 // UpdateRecords updates the records with the current ip
