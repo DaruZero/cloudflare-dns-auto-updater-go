@@ -29,7 +29,7 @@ func NewConfig() *Config {
 		ZoneId:          GetEnv("ZONE_ID", false, ""),
 		ZoneName:        GetEnv("ZONE_NAME", false, ""),
 	}
-	zap.S().Debugf("Config loaded: %+v", config)
+	zap.S().Debug("Config loaded")
 
 	if config.ZoneId == "" && config.ZoneName == "" {
 		zap.S().Fatal("Either ZONE_ID or ZONE_NAME is required")

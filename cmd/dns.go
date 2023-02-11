@@ -74,15 +74,12 @@ func (dns *Dns) GetZoneId(zoneName string) string {
 	req.Header.Set("X-Auth-Key", dns.Cfg.AuthKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	zap.S().Debugf("Sending request to %s", req.URL.String())
+	url := SanitizeString(req.URL.String())
+	zap.S().Debugf("Sending request to %s", url)
 
 	res, err := dns.HttpClient.Do(req)
 	if err != nil {
 		zap.S().Fatal(err)
-	}
-
-	if res.StatusCode != 200 {
-		zap.S().Fatal("Error getting zone id. HTTP status code: ", res.StatusCode)
 	}
 
 	bodyBytes, err := io.ReadAll(res.Body)
@@ -108,7 +105,9 @@ func (dns *Dns) GetZoneId(zoneName string) string {
 		zap.S().Fatal(err)
 	}
 
-	zap.S().Debugf("Response body: %+v", resBody)
+	if !resBody.Success || res.StatusCode != 200 {
+		zap.S().Fatalf("Error getting zone id. HTTP status code: %d. Response body: %s", res.StatusCode, string(bodyBytes))
+	}
 
 	for _, z := range resBody.Result {
 		if z.Name == zoneName {
@@ -124,14 +123,15 @@ func (dns *Dns) GetZoneId(zoneName string) string {
 // GetCurrentIp gets the current ip address
 func (dns *Dns) GetCurrentIp() string {
 	zap.S().Info("Getting current ip")
-	for {
 
+	for {
 		req, err := http.NewRequest("GET", "https://api.ipify.org", nil)
 		if err != nil {
 			zap.S().Fatal(err)
 		}
 
-		zap.S().Debugf("Sending request to %s", req.URL.String())
+		url := SanitizeString(req.URL.String())
+		zap.S().Debugf("Sending request to %s", url)
 
 		res, err := dns.HttpClient.Do(req)
 		if err != nil {
@@ -149,7 +149,6 @@ func (dns *Dns) GetCurrentIp() string {
 			zap.S().Fatal(err)
 		}
 
-		zap.S().Debugf("Response body: %s", string(bodyBytes))
 		zap.S().Info("Successfully got current ip")
 
 		return string(bodyBytes)
@@ -169,15 +168,12 @@ func (dns *Dns) GetRecords() []Record {
 	req.Header.Set("X-Auth-Key", dns.Cfg.AuthKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	zap.S().Debugf("Sending request to %s", req.URL.String())
+	url := SanitizeString(req.URL.String())
+	zap.S().Debugf("Sending request to %s", url)
 
 	res, err := dns.HttpClient.Do(req)
 	if err != nil {
 		zap.S().Fatal(err)
-	}
-
-	if res.StatusCode != 200 {
-		zap.S().Fatal("Error getting records")
 	}
 
 	bodyBytes, err := io.ReadAll(res.Body)
@@ -200,7 +196,9 @@ func (dns *Dns) GetRecords() []Record {
 		zap.S().Fatal(err)
 	}
 
-	zap.S().Debugf("Response body: %+v", resBody)
+	if !resBody.Success || res.StatusCode != 200 {
+		zap.S().Fatalf("Error getting records. HTTP status code: %d. Response body: %s", res.StatusCode, string(bodyBytes))
+	}
 
 	if dns.Cfg.RecordId != "" {
 		for _, record := range resBody.Result {
@@ -238,15 +236,12 @@ func (dns *Dns) UpdateRecords() (updatedRecords []string, updated bool) {
 			req.Header.Set("X-Auth-Key", dns.Cfg.AuthKey)
 			req.Header.Set("Content-Type", "application/json")
 
-			zap.S().Debugf("Sending request to %s", req.URL.String())
+			url := SanitizeString(req.URL.String())
+			zap.S().Debugf("Sending request to %s", url)
 
 			res, err := dns.HttpClient.Do(req)
 			if err != nil {
 				zap.S().Fatal(err)
-			}
-
-			if res.StatusCode != 200 {
-				zap.S().Fatal("Error updating records")
 			}
 
 			bodyBytes, err := io.ReadAll(res.Body)
@@ -269,11 +264,13 @@ func (dns *Dns) UpdateRecords() (updatedRecords []string, updated bool) {
 				zap.S().Fatal(err)
 			}
 
+			if !resBody.Success || res.StatusCode != 200 {
+				zap.S().Fatalf("Error updating records. HTTP status code: %d. Response body: %s", res.StatusCode, string(bodyBytes))
+			}
+
 			updatedRecords = append(updatedRecords, record.Name)
 
-			zap.S().Debugf("Response body: %+v", resBody)
-
-			zap.S().Info("Updated record ", record.Name, " to ", resBody.Result.Content)
+			zap.S().Infof("Updated record %s", record.Name)
 		}
 	}
 
