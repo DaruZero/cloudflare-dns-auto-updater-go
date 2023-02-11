@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"go.uber.org/zap"
 	"io"
 	"net/http"
@@ -226,7 +227,7 @@ func (dns *Dns) UpdateRecords() (updatedRecords []string, updated bool) {
 			zap.S().Infof("Updating record %s", record.Name)
 			updated = true
 
-			payload := strings.NewReader(`{"content":"` + dns.CurrentIp)
+			payload := strings.NewReader(fmt.Sprintf(`{"content":"%s","name":"%s","ttl":"%d"}`, dns.CurrentIp, record.Name, record.Ttl))
 			req, err := http.NewRequest("PUT", "https://api.cloudflare.com/client/v4/zones/"+dns.ZoneId+"/dns_records/"+record.Id, payload)
 			if err != nil {
 				zap.S().Fatal(err)
