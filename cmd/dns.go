@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"go.uber.org/zap"
 	"io"
@@ -46,9 +47,7 @@ func NewDns(cfg *Config) *Dns {
 	}
 
 	tr := &http.Transport{
-		MaxIdleConns:       10,
-		IdleConnTimeout:    30 * time.Second,
-		DisableCompression: true,
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	dns.HttpClient = &http.Client{Transport: tr}
 
