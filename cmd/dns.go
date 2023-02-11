@@ -45,12 +45,7 @@ func NewDns(cfg *Config) *Dns {
 		Cfg: cfg,
 	}
 
-	tr := &http.Transport{
-		MaxIdleConns:       10,
-		IdleConnTimeout:    30 * time.Second,
-		DisableCompression: true,
-	}
-	dns.HttpClient = &http.Client{Transport: tr}
+	dns.HttpClient = &http.Client{}
 
 	if cfg.ZoneId != "" {
 		dns.ZoneId = cfg.ZoneId
