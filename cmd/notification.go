@@ -19,7 +19,7 @@ type Email struct {
 
 // NewNotifier creates a new Notifier
 func NewNotifier(cfg *Config) *Notifier {
-	zap.S().Info("Creating notifier")
+	zap.S().Debug("Creating notifier")
 	return &Notifier{
 		Email: Email{
 			SenderAddress:   cfg.SenderAddress,

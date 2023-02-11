@@ -41,7 +41,7 @@ type Record struct {
 
 // NewDns creates a new Dns struct instance
 func NewDns(cfg *Config) *Dns {
-	zap.S().Info("Creating new Dns struct")
+	zap.S().Debug("Creating new Dns struct")
 	dns := &Dns{
 		Cfg: cfg,
 	}
