@@ -2,7 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/DaruZero/cloudflare-dns-auto-updater-go)](https://goreportcard.com/report/github.com/DaruZero/cloudflare-dns-auto-updater-go)
 [![Docker Pulls](https://img.shields.io/docker/pulls/daruzero/cfautoupdater-go)](https://hub.docker.com/r/daruzero/cfautoupdater-go)
-[![Docker Image Size (tag)](https://img.shields.io/docker/image-size/daruzero/cfautoupdater/latest-go)](https://hub.docker.com/r/daruzero/cfautoupdater-go)
+[![Docker Image Size (tag)](https://img.shields.io/docker/image-size/daruzero/cfautoupdater-go/latest)](https://hub.docker.com/r/daruzero/cfautoupdater-go)
 
 If you have some self-hosted services exposed to the internet but not a static public IP, you certainly faced the annoying task to access the CloudFlare dashboard and manually change all your records with the new IP everytime it changes.
 
