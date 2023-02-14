@@ -1,6 +1,8 @@
-package main
+package dnsapi
 
 import (
+	"cloudflare-dns-auto-updater-go/cmd/config"
+	"cloudflare-dns-auto-updater-go/cmd/utils"
 	"encoding/json"
 	"fmt"
 	"go.uber.org/zap"
@@ -10,8 +12,8 @@ import (
 	"time"
 )
 
-type DNS struct {
-	Cfg        *Config
+type CFDNS struct {
+	Cfg        *config.Config
 	CurrentIP  string
 	ZoneID     string
 	Records    []Record
@@ -61,9 +63,9 @@ type Message struct {
 }
 
 // NewDNS creates a new Dns struct instance
-func NewDNS(cfg *Config) *DNS {
+func NewDNS(cfg *config.Config) *CFDNS {
 	zap.S().Debug("Creating new Dns struct")
-	dns := &DNS{
+	dns := &CFDNS{
 		Cfg: cfg,
 	}
 
@@ -83,7 +85,7 @@ func NewDNS(cfg *Config) *DNS {
 }
 
 // GetZoneID gets the zone id from the zone name
-func (dns *DNS) GetZoneID(zoneName string) string {
+func (dns *CFDNS) GetZoneID(zoneName string) string {
 	zap.S().Infof("Getting zone id for %s", zoneName)
 	zoneID := ""
 
@@ -96,7 +98,7 @@ func (dns *DNS) GetZoneID(zoneName string) string {
 	req.Header.Set("X-Auth-Key", dns.Cfg.AuthKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	url := SanitizeString(req.URL.String())
+	url := utils.SanitizeString(req.URL.String())
 	zap.S().Debugf("Sending request to %s", url)
 
 	res, err := dns.HTTPClient.Do(req)
@@ -133,7 +135,7 @@ func (dns *DNS) GetZoneID(zoneName string) string {
 }
 
 // GetCurrentIP gets the current ip address
-func (dns *DNS) GetCurrentIP() string {
+func (dns *CFDNS) GetCurrentIP() string {
 	zap.S().Info("Getting current ip")
 
 	for {
@@ -142,7 +144,7 @@ func (dns *DNS) GetCurrentIP() string {
 			zap.S().Fatal(err)
 		}
 
-		url := SanitizeString(req.URL.String())
+		url := utils.SanitizeString(req.URL.String())
 		zap.S().Debugf("Sending request to %s", url)
 
 		res, err := dns.HTTPClient.Do(req)
@@ -169,7 +171,7 @@ func (dns *DNS) GetCurrentIP() string {
 }
 
 // GetRecords gets all the records for the zone
-func (dns *DNS) GetRecords() []Record {
+func (dns *CFDNS) GetRecords() []Record {
 	zap.S().Info("Getting records")
 
 	req, err := http.NewRequest("GET", "https://api.cloudflare.com/client/v4/zones/"+dns.ZoneID+"/dns_records", nil)
@@ -181,7 +183,7 @@ func (dns *DNS) GetRecords() []Record {
 	req.Header.Set("X-Auth-Key", dns.Cfg.AuthKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	url := SanitizeString(req.URL.String())
+	url := utils.SanitizeString(req.URL.String())
 	zap.S().Debugf("Sending request to %s", url)
 
 	res, err := dns.HTTPClient.Do(req)
@@ -232,7 +234,7 @@ func (dns *DNS) GetRecords() []Record {
 }
 
 // UpdateRecords updates the records with the current ip
-func (dns *DNS) UpdateRecords() (updatedRecords []string, updated bool) {
+func (dns *CFDNS) UpdateRecords() (updatedRecords []string, updated bool) {
 	zap.S().Info("Checking records")
 
 	updated = false
@@ -252,7 +254,7 @@ func (dns *DNS) UpdateRecords() (updatedRecords []string, updated bool) {
 			req.Header.Set("X-Auth-Key", dns.Cfg.AuthKey)
 			req.Header.Set("Content-Type", "application/json")
 
-			url := SanitizeString(req.URL.String())
+			url := utils.SanitizeString(req.URL.String())
 			zap.S().Debugf("Sending request to %s", url)
 
 			res, err := dns.HTTPClient.Do(req)

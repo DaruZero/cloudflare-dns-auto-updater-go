@@ -1,6 +1,7 @@
-package main
+package notification
 
 import (
+	"cloudflare-dns-auto-updater-go/cmd/config"
 	"go.uber.org/zap"
 	"net/smtp"
 )
@@ -18,7 +19,7 @@ type Email struct {
 }
 
 // NewNotifier creates a new Notifier
-func NewNotifier(cfg *Config) *Notifier {
+func NewNotifier(cfg *config.Config) *Notifier {
 	zap.S().Debug("Creating notifier")
 	return &Notifier{
 		Email: Email{
