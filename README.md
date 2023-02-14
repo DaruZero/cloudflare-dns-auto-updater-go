@@ -8,7 +8,7 @@ If you have some self-hosted services exposed to the internet but not a static p
 
 What if I tell you that it can be automated? With this simple application you just have to spin a Docker container and not worry about your IP changing anymore.
 
-It will continuosly run and fetch your public IP at a given interval, detecting if it changes and sending a request to the CloudFlare API to update you records. You can even choose to be notified by email when that happens.
+It will continuously run and fetch your public IP at a given interval, detecting if it changes and sending a request to the CloudFlare API to update you records. You can even choose to be notified by email when that happens.
 
 This is based on the [daruzero/cloudflare-dns-auto-updater](https://github.com/DaruZero/cloudflare-dns-auto-updater) python script, but it has been rewritten in Go.
 
@@ -45,7 +45,7 @@ This is based on the [daruzero/cloudflare-dns-auto-updater](https://github.com/D
       restart: unless-stopped
   ```
 
-### Enviroment variables
+### Environment variables
 
 #### Required
 
@@ -86,4 +86,4 @@ This is based on the [daruzero/cloudflare-dns-auto-updater](https://github.com/D
   - [ ] Telegram
   - [ ] Discord
   - [ ] Slack
-- [ ] Spport for other DNS services
+- [ ] Support for other DNS services

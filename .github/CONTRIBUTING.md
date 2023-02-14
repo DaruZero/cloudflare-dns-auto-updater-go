@@ -41,7 +41,7 @@ If you want to work on an issue, please assign yourself to the issue. This way w
      - `test` for changes to the tests
      - `ci` for changes to the CI/CD pipeline
      - `build` for changes to the build process
-     - `chore` for auxiliary tools or anyting that does not fit in the other categories
+     - `chore` for auxiliary tools or anything that does not fit in the other categories
    - `short-description` should be a short description of the change, or the issue title if it is short enough.
 3. Make your changes and commit them to your branch. Try to keep your commits small and focused on one thing. If you have "junk" commits, like "fix typo", "fix bug", "fix bug again", you can squash them together.
     We also follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification for commit messages.
@@ -64,7 +64,7 @@ If you are a maintainer, please review the pull request. If you are not a mainta
 
 - We may ask you to make some changes to your pull request. If you are not sure how to do that, please ask us.
 - As you update your pull request, please make sure that the tests are still passing, and to mark each conversation as resolved if you have fixed the issue.
-- If you run into merge confilcts, please rebase your branch on the latest `main` branch.
+- If you run into merge conflicts, please rebase your branch on the latest `main` branch.
 
 #### Merge a pull request
 

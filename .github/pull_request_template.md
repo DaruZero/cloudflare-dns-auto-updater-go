@@ -30,7 +30,7 @@ Please describe the tests that you ran to verify your changes. Provide instructi
 
 *You can also fill these out after creating the PR. If you're unsure about any of them, don't hesitate to ask. We're here to help! This is simply a reminder of what we are going to look for before merging your code.*
 
-- [ ] I have read the [contributing](CONTRIBUTING.md) giuidelines and the [code of conduct](CODE_OF_CONDUCT.md).
+- [ ] I have read the [contributing](CONTRIBUTING.md) guidelines and the [code of conduct](CODE_OF_CONDUCT.md).
 - [ ] I have added tests that prove my fix is effective or that my feature works
 - [ ] I have added necessary documentation (if appropriate)
 - [ ] I have made corresponding changes to the changelog (if needed).

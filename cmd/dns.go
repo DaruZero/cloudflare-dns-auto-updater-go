@@ -10,61 +10,82 @@ import (
 	"time"
 )
 
-type Dns struct {
+type DNS struct {
 	Cfg        *Config
-	CurrentIp  string
-	ZoneId     string
+	CurrentIP  string
+	ZoneID     string
 	Records    []Record
-	HttpClient *http.Client
+	HTTPClient *http.Client
 }
 
-type Record struct {
-	Comment   string   `json:"comment"`
-	Content   string   `json:"content"`
-	CreatedOn string   `json:"created_on"`
-	Data      struct{} `json:"data"`
-	Id        string   `json:"id"`
-	Locked    bool     `json:"locked"`
-	Meta      struct {
-		AutoAdded bool   `json:"auto_added"`
-		Source    string `json:"source"`
-	}
+type Record struct { //nolint:maligned
+	Comment    string `json:"comment"`
+	Content    string `json:"content"`
+	CreatedOn  string `json:"created_on"`
+	Data       Data   `json:"data"`
+	ID         string `json:"id"`
+	Locked     bool   `json:"locked"`
+	Meta       Meta   `json:"meta"`
 	ModifiedOn string `json:"modified_on"`
 	Name       string `json:"name"`
 	Proxiable  bool   `json:"proxiable"`
 	Proxied    bool   `json:"proxied"`
-	Ttl        int    `json:"ttl"`
+	TTL        int    `json:"ttl"`
 	Type       string `json:"type"`
-	ZoneId     string `json:"zone_id"`
+	ZoneID     string `json:"zone_id"`
 	ZoneName   string `json:"zone_name"`
 }
 
-// NewDns creates a new Dns struct instance
-func NewDns(cfg *Config) *Dns {
+type Meta struct {
+	AutoAdded bool   `json:"auto_added"`
+	Source    string `json:"source"`
+}
+
+type Data struct{}
+
+type ResponseBody struct {
+	Success  bool      `json:"success"`
+	Errors   []Error   `json:"errors"`
+	Messages []Message `json:"messages"`
+	Result   []Record  `json:"result"`
+}
+
+type Error struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+type Message struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+// NewDNS creates a new Dns struct instance
+func NewDNS(cfg *Config) *DNS {
 	zap.S().Debug("Creating new Dns struct")
-	dns := &Dns{
+	dns := &DNS{
 		Cfg: cfg,
 	}
 
-	dns.HttpClient = &http.Client{}
+	dns.HTTPClient = &http.Client{}
 
-	if cfg.ZoneId != "" {
-		dns.ZoneId = cfg.ZoneId
+	if cfg.ZoneID != "" {
+		dns.ZoneID = cfg.ZoneID
 	} else {
-		dns.ZoneId = dns.GetZoneId(cfg.ZoneName)
+		dns.ZoneID = dns.GetZoneID(cfg.ZoneName)
 	}
 
-	dns.CurrentIp = dns.GetCurrentIp()
+	dns.CurrentIP = dns.GetCurrentIP()
 
 	dns.Records = dns.GetRecords()
 
 	return dns
 }
 
-// GetZoneId gets the zone id from the zone name
-func (dns *Dns) GetZoneId(zoneName string) string {
+// GetZoneID gets the zone id from the zone name
+func (dns *DNS) GetZoneID(zoneName string) string {
 	zap.S().Infof("Getting zone id for %s", zoneName)
-	zoneId := ""
+	zoneID := ""
 
 	req, err := http.NewRequest("GET", "https://api.cloudflare.com/client/v4/zones", nil)
 	if err != nil {
@@ -78,29 +99,18 @@ func (dns *Dns) GetZoneId(zoneName string) string {
 	url := SanitizeString(req.URL.String())
 	zap.S().Debugf("Sending request to %s", url)
 
-	res, err := dns.HttpClient.Do(req)
+	res, err := dns.HTTPClient.Do(req)
 	if err != nil {
 		zap.S().Fatal(err)
 	}
+	defer res.Body.Close()
 
 	bodyBytes, err := io.ReadAll(res.Body)
 	if err != nil {
 		zap.S().Fatal(err)
 	}
 
-	var resBody struct {
-		Success bool `json:"success"`
-		Errors  []struct {
-			Code    int    `json:"code"`
-			Message string `json:"message"`
-		} `json:"errors"`
-		Messages []string `json:"messages"`
-		Result   []struct {
-			Id   string `json:"id"`
-			Name string `json:"name"`
-		} `json:"result"`
-	}
-
+	var resBody ResponseBody
 	err = json.Unmarshal(bodyBytes, &resBody)
 	if err != nil {
 		zap.S().Fatal(err)
@@ -112,17 +122,18 @@ func (dns *Dns) GetZoneId(zoneName string) string {
 
 	for _, z := range resBody.Result {
 		if z.Name == zoneName {
-			zoneId = z.Id
+			zoneID = z.ID
 		}
 	}
 
 	zap.S().Info("Successfully got zone id")
+	res.Body.Close()
 
-	return zoneId
+	return zoneID
 }
 
-// GetCurrentIp gets the current ip address
-func (dns *Dns) GetCurrentIp() string {
+// GetCurrentIP gets the current ip address
+func (dns *DNS) GetCurrentIP() string {
 	zap.S().Info("Getting current ip")
 
 	for {
@@ -134,7 +145,7 @@ func (dns *Dns) GetCurrentIp() string {
 		url := SanitizeString(req.URL.String())
 		zap.S().Debugf("Sending request to %s", url)
 
-		res, err := dns.HttpClient.Do(req)
+		res, err := dns.HTTPClient.Do(req)
 		if err != nil {
 			zap.S().Fatal(err)
 		}
@@ -151,16 +162,17 @@ func (dns *Dns) GetCurrentIp() string {
 		}
 
 		zap.S().Info("Successfully got current ip")
+		res.Body.Close()
 
 		return string(bodyBytes)
 	}
 }
 
 // GetRecords gets all the records for the zone
-func (dns *Dns) GetRecords() []Record {
+func (dns *DNS) GetRecords() []Record {
 	zap.S().Info("Getting records")
 
-	req, err := http.NewRequest("GET", "https://api.cloudflare.com/client/v4/zones/"+dns.ZoneId+"/dns_records", nil)
+	req, err := http.NewRequest("GET", "https://api.cloudflare.com/client/v4/zones/"+dns.ZoneID+"/dns_records", nil)
 	if err != nil {
 		zap.S().Fatal(err)
 	}
@@ -172,7 +184,7 @@ func (dns *Dns) GetRecords() []Record {
 	url := SanitizeString(req.URL.String())
 	zap.S().Debugf("Sending request to %s", url)
 
-	res, err := dns.HttpClient.Do(req)
+	res, err := dns.HTTPClient.Do(req)
 	if err != nil {
 		zap.S().Fatal(err)
 	}
@@ -182,16 +194,7 @@ func (dns *Dns) GetRecords() []Record {
 		zap.S().Fatal(err)
 	}
 
-	var resBody struct {
-		Success bool `json:"success"`
-		Errors  []struct {
-			Code    int    `json:"code"`
-			Message string `json:"message"`
-		} `json:"errors"`
-		Messages []string `json:"messages"`
-		Result   []Record `json:"result"`
-	}
-
+	var resBody ResponseBody
 	err = json.Unmarshal(bodyBytes, &resBody)
 	if err != nil {
 		zap.S().Fatal(err)
@@ -201,9 +204,9 @@ func (dns *Dns) GetRecords() []Record {
 		zap.S().Fatalf("Error getting records. HTTP status code: %d. Response body: %s", res.StatusCode, string(bodyBytes))
 	}
 
-	if dns.Cfg.RecordId != "" {
+	if dns.Cfg.RecordID != "" {
 		for _, record := range resBody.Result {
-			if record.Id == dns.Cfg.RecordId {
+			if record.ID == dns.Cfg.RecordID {
 				zap.S().Info("Found record for given id")
 				return []Record{record}
 			}
@@ -223,23 +226,24 @@ func (dns *Dns) GetRecords() []Record {
 	}
 
 	zap.S().Info("Successfully got records")
+	res.Body.Close()
 
 	return records
 }
 
 // UpdateRecords updates the records with the current ip
-func (dns *Dns) UpdateRecords() (updatedRecords []string, updated bool) {
+func (dns *DNS) UpdateRecords() (updatedRecords []string, updated bool) {
 	zap.S().Info("Checking records")
 
 	updated = false
 
 	for _, record := range dns.Records {
-		if record.Content != dns.CurrentIp {
+		if record.Content != dns.CurrentIP {
 			zap.S().Infof("Updating record %s", record.Name)
 			updated = true
 
-			payload := strings.NewReader(fmt.Sprintf(`{"content":"%s","name":"%s","ttl":"%d"}`, dns.CurrentIp, record.Name, record.Ttl))
-			req, err := http.NewRequest("PUT", "https://api.cloudflare.com/client/v4/zones/"+dns.ZoneId+"/dns_records/"+record.Id, payload)
+			payload := strings.NewReader(fmt.Sprintf(`{"content":"%s","name":"%s","ttl":"%d"}`, dns.CurrentIP, record.Name, record.TTL))
+			req, err := http.NewRequest("PUT", "https://api.cloudflare.com/client/v4/zones/"+dns.ZoneID+"/dns_records/"+record.ID, payload)
 			if err != nil {
 				zap.S().Fatal(err)
 			}
@@ -251,7 +255,7 @@ func (dns *Dns) UpdateRecords() (updatedRecords []string, updated bool) {
 			url := SanitizeString(req.URL.String())
 			zap.S().Debugf("Sending request to %s", url)
 
-			res, err := dns.HttpClient.Do(req)
+			res, err := dns.HTTPClient.Do(req)
 			if err != nil {
 				zap.S().Fatal(err)
 			}
@@ -261,16 +265,7 @@ func (dns *Dns) UpdateRecords() (updatedRecords []string, updated bool) {
 				zap.S().Fatal(err)
 			}
 
-			var resBody struct {
-				Success bool `json:"success"`
-				Errors  []struct {
-					Code    int    `json:"code"`
-					Message string `json:"message"`
-				} `json:"errors"`
-				Messages []string `json:"messages"`
-				Result   Record   `json:"result"`
-			}
-
+			var resBody ResponseBody
 			err = json.Unmarshal(bodyBytes, &resBody)
 			if err != nil {
 				zap.S().Fatal(err)
@@ -283,6 +278,7 @@ func (dns *Dns) UpdateRecords() (updatedRecords []string, updated bool) {
 			updatedRecords = append(updatedRecords, record.Name)
 
 			zap.S().Infof("Updated record %s", record.Name)
+			res.Body.Close()
 		}
 	}
 

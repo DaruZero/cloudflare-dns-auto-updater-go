@@ -18,7 +18,7 @@ func main() {
 
 	cfg := NewConfig()
 
-	dns := NewDns(cfg)
+	dns := NewDNS(cfg)
 
 	var notifier *Notifier
 	if cfg.SenderAddress != "" && cfg.SenderPassword != "" && cfg.ReceiverAddress != "" {
@@ -30,7 +30,7 @@ func main() {
 		if updated {
 			zap.S().Infof("Updated %d records", len(updatedRecords))
 			if notifier != nil {
-				err := notifier.SendEmail(updatedRecords, dns.CurrentIp)
+				err := notifier.SendEmail(updatedRecords, dns.CurrentIP)
 				if err != nil {
 					zap.S().Errorf("Error sending email: %s", err)
 				}
@@ -42,7 +42,7 @@ func main() {
 		zap.S().Infof("Sleeping for %d seconds", cfg.CheckInterval)
 		time.Sleep(time.Duration(cfg.CheckInterval) * time.Second)
 
-		dns.CurrentIp = dns.GetCurrentIp()
+		dns.CurrentIP = dns.GetCurrentIP()
 		dns.Records = dns.GetRecords()
 	}
 }
