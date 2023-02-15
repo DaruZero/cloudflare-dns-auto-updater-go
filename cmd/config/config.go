@@ -1,7 +1,7 @@
 package config
 
 import (
-	"cloudflare-dns-auto-updater-go/cmd/utils"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/utils"
 	"go.uber.org/zap"
 )
 

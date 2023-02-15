@@ -2,8 +2,8 @@ package dnsapi
 
 import (
 	"bytes"
-	"cloudflare-dns-auto-updater-go/cmd/config"
-	"cloudflare-dns-auto-updater-go/cmd/mocks"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/config"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/mocks"
 	"io"
 	"net/http"
 	"testing"

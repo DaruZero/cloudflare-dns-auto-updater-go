@@ -1,10 +1,10 @@
 package main
 
 import (
-	"cloudflare-dns-auto-updater-go/cmd/config"
-	"cloudflare-dns-auto-updater-go/cmd/dnsapi"
-	"cloudflare-dns-auto-updater-go/cmd/notification"
-	"cloudflare-dns-auto-updater-go/cmd/utils"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/config"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/dnsapi"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/notification"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/utils"
 	"go.uber.org/zap"
 	"time"
 )

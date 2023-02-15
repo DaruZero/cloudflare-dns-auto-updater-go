@@ -1,7 +1,7 @@
 package notification
 
 import (
-	"cloudflare-dns-auto-updater-go/cmd/config"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/config"
 	"go.uber.org/zap"
 	"net/smtp"
 )

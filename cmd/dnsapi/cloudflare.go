@@ -1,9 +1,9 @@
 package dnsapi
 
 import (
-	"cloudflare-dns-auto-updater-go/cmd/config"
 	"encoding/json"
 	"fmt"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/config"
 	"go.uber.org/zap"
 	"io"
 	"net/http"
