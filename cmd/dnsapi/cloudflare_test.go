@@ -47,7 +47,7 @@ func TestDns_GetCurrentIP(t *testing.T) {
 		DoFunc: func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: 200,
-				Body:       io.NopCloser(bytes.NewReader([]byte(`"testIP"`))),
+				Body:       io.NopCloser(bytes.NewReader([]byte(`testIP`))),
 			}, nil
 		},
 	}

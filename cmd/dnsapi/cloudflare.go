@@ -139,7 +139,11 @@ func (dns *CFDNS) GetCurrentIP() string {
 		}
 
 		var bodyString string
-		unmarshalResponse(res.Body, &bodyString)
+		bodyBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+			zap.S().Fatal(err)
+		}
+		bodyString = string(bodyBytes)
 		res.Body.Close()
 
 		zap.S().Info("Successfully got current ip")
