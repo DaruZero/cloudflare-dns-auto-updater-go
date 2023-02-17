@@ -1,4 +1,4 @@
-module cloudflare-dns-auto-updater-go
+module github.com/daruzero/cloudflare-dns-auto-updater-go
 
 go 1.20
 
