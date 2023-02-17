@@ -1,12 +1,16 @@
 package main
 
 import (
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/config"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/dnsapi"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/notification"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/utils"
 	"go.uber.org/zap"
 	"time"
 )
 
 func main() {
-	log := NewLogger("LOG_LEVEL")
+	log := utils.NewLogger("LOG_LEVEL")
 	defer func(logger *zap.SugaredLogger) {
 		err := logger.Sync()
 		if err != nil {
@@ -14,15 +18,15 @@ func main() {
 		}
 	}(log)
 
-	zap.S().Info("Starting Cloudflare DNS Auto Updater")
+	zap.S().Info("Starting Cloudflare CFDNS Auto Updater")
 
-	cfg := NewConfig()
+	cfg := config.NewConfig()
 
-	dns := NewDNS(cfg)
+	dns := dnsapi.NewDNS(cfg)
 
-	var notifier *Notifier
+	var notifier *notification.Notifier
 	if cfg.SenderAddress != "" && cfg.SenderPassword != "" && cfg.ReceiverAddress != "" {
-		notifier = NewNotifier(cfg)
+		notifier = notification.NewNotifier(cfg)
 	}
 
 	for {
