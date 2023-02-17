@@ -2,6 +2,11 @@ name: Go Test
 
 on:
   push:
+    paths:
+      - "cmd/**"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/unit-test.yml"
 
 jobs:
   test:
