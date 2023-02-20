@@ -98,20 +98,22 @@ func TestDns_GetRecordsNoRecordID(t *testing.T) {
 	if len(dns.Records) != 1 {
 		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records))
 	}
-	if len(dns.Records["testZoneId"]) != 1 {
-		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records["testZoneId"]))
+	if len(dns.Records["testZoneID"]) != 1 {
+		t.Logf("%+v", dns.Records)
+		t.Logf("%+v", dns.Records["testZoneID"])
+		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records["testZoneID"]))
 	}
-	if dns.Records["testZoneId"][0].ID != "testRecordID" {
-		t.Errorf("GetRecords() = %s; want testRecordID", dns.Records["testZoneId"][0].ID)
+	if dns.Records["testZoneID"][0].ID != "testRecordID" {
+		t.Errorf("GetRecords() = %s; want testRecordID", dns.Records["testZoneID"][0].ID)
 	}
-	if dns.Records["testZoneId"][0].Name != "testRecordName" {
-		t.Errorf("GetRecords() = %s; want testRecordName", dns.Records["testZoneId"][0].Name)
+	if dns.Records["testZoneID"][0].Name != "testRecordName" {
+		t.Errorf("GetRecords() = %s; want testRecordName", dns.Records["testZoneID"][0].Name)
 	}
-	if dns.Records["testZoneId"][0].Type != "A" {
-		t.Errorf("GetRecords() = %s; want A", dns.Records["testZoneId"][0].Type)
+	if dns.Records["testZoneID"][0].Type != "A" {
+		t.Errorf("GetRecords() = %s; want A", dns.Records["testZoneID"][0].Type)
 	}
-	if dns.Records["testZoneId"][0].Content != "testContent" {
-		t.Errorf("GetRecords() = %s; want testContent", dns.Records["testZoneId"][0].Content)
+	if dns.Records["testZoneID"][0].Content != "testContent" {
+		t.Errorf("GetRecords() = %s; want testContent", dns.Records["testZoneID"][0].Content)
 	}
 }
 
@@ -147,20 +149,20 @@ func TestDns_GetRecordsWithRecordID(t *testing.T) {
 	if len(dns.Records) != 1 {
 		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records))
 	}
-	if len(dns.Records["testZoneId"]) != 1 {
-		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records["testZoneId"]))
+	if len(dns.Records["testZoneID"]) != 1 {
+		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records["testZoneID"]))
 	}
-	if dns.Records["testZoneId"][0].ID != "testRecordID" {
-		t.Fatalf("GetRecords() = %s; want testRecordID", dns.Records["testZoneId"][0].ID)
+	if dns.Records["testZoneID"][0].ID != "testRecordID" {
+		t.Fatalf("GetRecords() = %s; want testRecordID", dns.Records["testZoneID"][0].ID)
 	}
-	if dns.Records["testZoneId"][0].Name != "testRecordName" {
-		t.Errorf("GetRecords() = %s; want testRecordName", dns.Records["testZoneId"][0].Name)
+	if dns.Records["testZoneID"][0].Name != "testRecordName" {
+		t.Errorf("GetRecords() = %s; want testRecordName", dns.Records["testZoneID"][0].Name)
 	}
-	if dns.Records["testZoneId"][0].Type != "A" {
-		t.Errorf("GetRecords() = %s; want A", dns.Records["testZoneId"][0].Type)
+	if dns.Records["testZoneID"][0].Type != "A" {
+		t.Errorf("GetRecords() = %s; want A", dns.Records["testZoneID"][0].Type)
 	}
-	if dns.Records["testZoneId"][0].Content != "testContent" {
-		t.Errorf("GetRecords() = %s; want testContent", dns.Records["testZoneId"][0].Content)
+	if dns.Records["testZoneID"][0].Content != "testContent" {
+		t.Errorf("GetRecords() = %s; want testContent", dns.Records["testZoneID"][0].Content)
 	}
 }
 
@@ -204,10 +206,10 @@ func TestDns_UpdateRecord(t *testing.T) {
 	if len(updatedRecords) != 1 {
 		t.Fatalf("UpdateRecords() = %d; want 1", len(updatedRecords))
 	}
-	if len(updatedRecords["testZoneId"]) != 1 {
-		t.Fatalf("UpdateRecords() = %d; want 1", len(updatedRecords["testZoneId"]))
+	if len(updatedRecords["testZoneID"]) != 1 {
+		t.Fatalf("UpdateRecords() = %d; want 1", len(updatedRecords["testZoneID"]))
 	}
-	if updatedRecords["testZoneId"][0] != "testRecordID" {
-		t.Errorf("UpdateRecords() = %s; want testRecordID", updatedRecords["testZoneId"][0])
+	if updatedRecords["testZoneID"][0] != "testRecordName" {
+		t.Errorf("UpdateRecords() = %s; want testRecordName", updatedRecords["testZoneID"][0])
 	}
 }
