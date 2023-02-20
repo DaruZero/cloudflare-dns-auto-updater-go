@@ -96,3 +96,75 @@ func TestGetEnvAsIntNotRequiredFallback(t *testing.T) {
 		t.Errorf("GetEnvAsInt() = %d; want 1", value)
 	}
 }
+
+// TestGetEnvAsStringSliceRequired tests the GetEnvAsStringSlice function with a required environment variable
+func TestGetEnvAsStringSliceRequired(t *testing.T) {
+	// Set the environment variable
+	err := os.Setenv("TEST_ENV", "1,2,3")
+	if err != nil {
+		t.Errorf("Error setting environment variable: %s", err)
+	}
+
+	// Get the environment variable
+	value := GetEnvAsStringSlice("TEST_ENV", true, nil)
+
+	// Check the value
+	if len(value) != 3 {
+		t.Errorf("GetEnvAsStringSlice() = %d; want 3", len(value))
+	}
+	if value[0] != "1" {
+		t.Errorf("GetEnvAsStringSlice() = %s; want 1", value[0])
+	}
+	if value[1] != "2" {
+		t.Errorf("GetEnvAsStringSlice() = %s; want 2", value[1])
+	}
+	if value[2] != "3" {
+		t.Errorf("GetEnvAsStringSlice() = %s; want 3", value[2])
+	}
+}
+
+// TestGetEnvAsStringSliceNotRequired tests the GetEnvAsStringSlice function with a not required environment variable
+func TestGetEnvAsStringSliceNotRequired(t *testing.T) {
+	// Set the environment variable
+	err := os.Setenv("TEST_ENV", "1,2,3")
+	if err != nil {
+		t.Errorf("Error setting environment variable: %s", err)
+	}
+
+	// Get the environment variable
+	value := GetEnvAsStringSlice("TEST_ENV", false, nil)
+
+	// Check the value
+	if len(value) != 3 {
+		t.Errorf("GetEnvAsStringSlice() = %d; want 3", len(value))
+	}
+	if value[0] != "1" {
+		t.Errorf("GetEnvAsStringSlice() = %s; want 1", value[0])
+	}
+	if value[1] != "2" {
+		t.Errorf("GetEnvAsStringSlice() = %s; want 2", value[1])
+	}
+	if value[2] != "3" {
+		t.Errorf("GetEnvAsStringSlice() = %s; want 3", value[2])
+	}
+}
+
+// TestGetEnvAsStringSliceNotRequired tests the GetEnvAsStringSlice function with a not required environment variable
+func TestGetEnvAsStringSliceNotRequiredFallback(t *testing.T) {
+	// Get the environment variable
+	value := GetEnvAsStringSlice("TEST_ENV", false, []string{"1", "2", "3"})
+
+	// Check the value
+	if len(value) != 3 {
+		t.Errorf("GetEnvAsStringSlice() = %d; want 3", len(value))
+	}
+	if value[0] != "1" {
+		t.Errorf("GetEnvAsStringSlice() = %s; want 1", value[0])
+	}
+	if value[1] != "2" {
+		t.Errorf("GetEnvAsStringSlice() = %s; want 2", value[1])
+	}
+	if value[2] != "3" {
+		t.Errorf("GetEnvAsStringSlice() = %s; want 3", value[2])
+	}
+}

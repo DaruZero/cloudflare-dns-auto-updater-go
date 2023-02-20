@@ -9,12 +9,13 @@ import (
 	"testing"
 )
 
-// TestDns_GetZoneID tests the GetZoneId method
-func TestDns_GetZoneID(t *testing.T) {
+// TestDns_GetZoneIDs tests the GetZoneId method
+func TestDns_GetZoneIDs(t *testing.T) {
 	// Create a new config object
 	cfg := &config.Config{
-		AuthKey: "testAuthKey",
-		Email:   "testEmail",
+		AuthKey:   "testAuthKey",
+		Email:     "testEmail",
+		ZoneNames: []string{"testZoneName"},
 	}
 	// Create a new mock client
 	mockClient := &mocks.MockClient{
@@ -33,10 +34,13 @@ func TestDns_GetZoneID(t *testing.T) {
 		HTTPClient: mockClient,
 	}
 	// Get the zone id
-	zoneID := dns.GetZoneID("testZoneName")
+	dns.GetZoneIDs()
 	// Check the zone id
-	if zoneID != "testID" {
-		t.Errorf("GetZoneID() = %s; want testID", zoneID)
+	if len(dns.ZoneIDs) != 1 {
+		t.Fatalf("GetZoneIDs() = %d; want 1", len(dns.ZoneIDs))
+	}
+	if dns.ZoneIDs[0] != "testID" {
+		t.Errorf("GetZoneIDs() = %s; want testID", dns.ZoneIDs[0])
 	}
 }
 
@@ -56,10 +60,10 @@ func TestDns_GetCurrentIP(t *testing.T) {
 		HTTPClient: mockClient,
 	}
 	// Get the current IP
-	currentIP := dns.GetCurrentIP()
+	dns.GetCurrentIP()
 	// Check the current IP
-	if currentIP != "testIP" {
-		t.Errorf("GetCurrentIP() = %s; want testIP", currentIP)
+	if dns.CurrentIP != "testIP" {
+		t.Errorf("GetCurrentIP() = %s; want testIP", dns.CurrentIP)
 	}
 }
 
@@ -67,14 +71,13 @@ func TestDns_GetCurrentIP(t *testing.T) {
 func TestDns_GetRecordsNoRecordID(t *testing.T) {
 	// Create a new config object
 	cfg := &config.Config{
-		AuthKey:  "testAuthKey",
-		Email:    "testEmail",
-		RecordID: "",
+		AuthKey: "testAuthKey",
+		Email:   "testEmail",
 	}
 	// Create a new mock client
 	mockClient := &mocks.MockClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			json := `{"success":true,"errors":[],"messages":[],"result":[{"id":"testID", "name": "testRecordName", "type": "A", "content": "testContent"}]}`
+			json := `{"success":true,"errors":[],"messages":[],"result":[{"id":"testRecordID", "name": "testRecordName", "type": "A", "content": "testContent"}]}`
 			body := io.NopCloser(bytes.NewReader([]byte(json)))
 			return &http.Response{
 				StatusCode: 200,
@@ -86,24 +89,29 @@ func TestDns_GetRecordsNoRecordID(t *testing.T) {
 	dns := &CFDNS{
 		Cfg:        cfg,
 		HTTPClient: mockClient,
+		Records:    make(map[string][]Record),
+		ZoneIDs:    []string{"testZoneID"},
 	}
 	// Get the records
-	records := dns.GetRecords()
+	dns.GetRecords()
 	// Check the records
-	if len(records) != 1 {
-		t.Errorf("GetRecords() = %d; want 1", len(records))
+	if len(dns.Records) != 1 {
+		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records))
 	}
-	if records[0].ID != "testID" {
-		t.Errorf("GetRecords() = %s; want testID", records[0].ID)
+	if len(dns.Records["testZoneId"]) != 1 {
+		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records["testZoneId"]))
 	}
-	if records[0].Name != "testRecordName" {
-		t.Errorf("GetRecords() = %s; want testRecordName", records[0].Name)
+	if dns.Records["testZoneId"][0].ID != "testRecordID" {
+		t.Errorf("GetRecords() = %s; want testRecordID", dns.Records["testZoneId"][0].ID)
 	}
-	if records[0].Type != "A" {
-		t.Errorf("GetRecords() = %s; want A", records[0].Type)
+	if dns.Records["testZoneId"][0].Name != "testRecordName" {
+		t.Errorf("GetRecords() = %s; want testRecordName", dns.Records["testZoneId"][0].Name)
 	}
-	if records[0].Content != "testContent" {
-		t.Errorf("GetRecords() = %s; want testContent", records[0].Content)
+	if dns.Records["testZoneId"][0].Type != "A" {
+		t.Errorf("GetRecords() = %s; want A", dns.Records["testZoneId"][0].Type)
+	}
+	if dns.Records["testZoneId"][0].Content != "testContent" {
+		t.Errorf("GetRecords() = %s; want testContent", dns.Records["testZoneId"][0].Content)
 	}
 }
 
@@ -111,14 +119,14 @@ func TestDns_GetRecordsNoRecordID(t *testing.T) {
 func TestDns_GetRecordsWithRecordID(t *testing.T) {
 	// Create a new config object
 	cfg := &config.Config{
-		AuthKey:  "testAuthKey",
-		Email:    "testEmail",
-		RecordID: "testID",
+		AuthKey:   "testAuthKey",
+		Email:     "testEmail",
+		RecordIDs: []string{"testRecordID"},
 	}
 	// Create a new mock client
 	mockClient := &mocks.MockClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			json := `{"success":true,"errors":[],"messages":[],"result":[{"id":"testID", "name": "testRecordName", "type": "A", "content": "testContent"}]}`
+			json := `{"success":true,"errors":[],"messages":[],"result":[{"id":"testRecordID", "name": "testRecordName", "type": "A", "content": "testContent"}]}`
 			body := io.NopCloser(bytes.NewReader([]byte(json)))
 			return &http.Response{
 				StatusCode: 200,
@@ -130,24 +138,29 @@ func TestDns_GetRecordsWithRecordID(t *testing.T) {
 	dns := &CFDNS{
 		Cfg:        cfg,
 		HTTPClient: mockClient,
+		Records:    make(map[string][]Record),
+		ZoneIDs:    []string{"testZoneID"},
 	}
 	// Get the records
-	records := dns.GetRecords()
+	dns.GetRecords()
 	// Check the records
-	if len(records) != 1 {
-		t.Errorf("GetRecords() = %d; want 1", len(records))
+	if len(dns.Records) != 1 {
+		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records))
 	}
-	if records[0].ID != "testID" {
-		t.Errorf("GetRecords() = %s; want testID", records[0].ID)
+	if len(dns.Records["testZoneId"]) != 1 {
+		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records["testZoneId"]))
 	}
-	if records[0].Name != "testRecordName" {
-		t.Errorf("GetRecords() = %s; want testRecordName", records[0].Name)
+	if dns.Records["testZoneId"][0].ID != "testRecordID" {
+		t.Fatalf("GetRecords() = %s; want testRecordID", dns.Records["testZoneId"][0].ID)
 	}
-	if records[0].Type != "A" {
-		t.Errorf("GetRecords() = %s; want A", records[0].Type)
+	if dns.Records["testZoneId"][0].Name != "testRecordName" {
+		t.Errorf("GetRecords() = %s; want testRecordName", dns.Records["testZoneId"][0].Name)
 	}
-	if records[0].Content != "testContent" {
-		t.Errorf("GetRecords() = %s; want testContent", records[0].Content)
+	if dns.Records["testZoneId"][0].Type != "A" {
+		t.Errorf("GetRecords() = %s; want A", dns.Records["testZoneId"][0].Type)
+	}
+	if dns.Records["testZoneId"][0].Content != "testContent" {
+		t.Errorf("GetRecords() = %s; want testContent", dns.Records["testZoneId"][0].Content)
 	}
 }
 
@@ -174,27 +187,27 @@ func TestDns_UpdateRecord(t *testing.T) {
 		Cfg:        cfg,
 		HTTPClient: mockClient,
 		CurrentIP:  "testIPNew",
-		Records: []Record{
-			{
-				ID:      "testID",
-				Name:    "testRecordName",
-				Type:    "A",
-				Content: "testIPToChange",
+		Records: map[string][]Record{
+			"testZoneID": {
+				{
+					ID:      "testRecordID",
+					Name:    "testRecordName",
+					Type:    "A",
+					Content: "testIPOld",
+				},
 			},
 		},
 	}
 	// Update the records
-	updatedRecords, updated := dns.UpdateRecords()
-
-	// Check the updated records
+	updatedRecords := dns.UpdateRecords()
+	// Check the records
 	if len(updatedRecords) != 1 {
-		t.Errorf("UpdateRecords() = %d; want 1", len(updatedRecords))
+		t.Fatalf("UpdateRecords() = %d; want 1", len(updatedRecords))
 	}
-	if updatedRecords[0] != "testRecordName" {
-		t.Errorf("UpdateRecords() = %s; want testRecordName", updatedRecords[0])
+	if len(updatedRecords["testZoneId"]) != 1 {
+		t.Fatalf("UpdateRecords() = %d; want 1", len(updatedRecords["testZoneId"]))
 	}
-	// Check if the records were updated
-	if !updated {
-		t.Errorf("UpdateRecords() = %t; want true", updated)
+	if updatedRecords["testZoneId"][0] != "testRecordID" {
+		t.Errorf("UpdateRecords() = %s; want testRecordID", updatedRecords["testZoneId"][0])
 	}
 }
