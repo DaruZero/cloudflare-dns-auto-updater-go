@@ -45,8 +45,28 @@ func GetEnvAsInt(name string, required bool, fallback int) int {
 	return i
 }
 
-func SanitizeString(s string) string {
-	s = strings.ReplaceAll(s, "\n", "")
-	s = strings.ReplaceAll(s, "\r", "")
-	return s
+// GetEnvAsStringSlice returns the value of the environment variable as a string slice
+func GetEnvAsStringSlice(name string, required bool, fallback []string) []string {
+	zap.S().Debugf("Loading environment variable %s", name)
+	value := os.Getenv(name)
+
+	if required && value == "" {
+		log.Fatalf("Environment variable %s is required", name)
+	}
+
+	if value == "" {
+		return fallback
+	}
+
+	return strings.Split(value, ",")
+}
+
+// StringInSlice checks if a string is in a slice
+func StringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
