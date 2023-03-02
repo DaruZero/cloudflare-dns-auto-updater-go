@@ -49,12 +49,12 @@ This is based on the [daruzero/cloudflare-dns-auto-updater](https://github.com/D
 
 #### Required
 
-| Variable    | Example value                                 | Description                                           |
-|-------------|-----------------------------------------------|-------------------------------------------------------|
-| `EMAIL`     | johndoe@example.com                           | Email address associated with your CloudFlare account |
-| `AUTH_KEY`  | c2547eb745079dac9320b638f5e225cf483cc5cfdda41 | Your CloudFlare Global API Key                        |
-| `ZONE_NAME` | example.com                                   | The domain name that you want to change the record of |
-| `ZONE_ID`   | 372e67954025e0ba6aaa6d586b9e0b59              | The ID of the zone you want to change a record of     |
+| Variable    | Example value                                 | Description                                                                                                               |
+|-------------|-----------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| `EMAIL`     | johndoe@example.com                           | Email address associated with your CloudFlare account                                                                     |
+| `AUTH_KEY`  | c2547eb745079dac9320b638f5e225cf483cc5cfdda41 | Your CloudFlare Global API Key                                                                                            |
+| `ZONE_NAME` | example.com                                   | The domain name that you want to change the record of. You can update multiple domains separating them with a `,` (comma) |
+| `ZONE_ID`   | 372e67954025e0ba6aaa6d586b9e0b59              | The ID of the zone you want to change a record of. You can update multiple domains separating them with a `,` (comma)     |
 
 > **Note:**
 >
@@ -79,7 +79,7 @@ This is based on the [daruzero/cloudflare-dns-auto-updater](https://github.com/D
 
 ## Future implementation
 
-- [ ] Possibility to update multiple domains
+- [x] Possibility to update multiple domains
 - [ ] Support for other SMTP servers other than Google's
 - [ ] Support for other notification systems
   - [ ] SMS

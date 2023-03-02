@@ -30,8 +30,8 @@ func main() {
 	}
 
 	for {
-		updatedRecords, updated := dns.UpdateRecords()
-		if updated {
+		updatedRecords := dns.UpdateRecords()
+		if len(updatedRecords) > 0 {
 			zap.S().Infof("Updated %d records", len(updatedRecords))
 			if notifier != nil {
 				err := notifier.SendEmail(updatedRecords, dns.CurrentIP)
@@ -46,7 +46,7 @@ func main() {
 		zap.S().Infof("Sleeping for %d seconds", cfg.CheckInterval)
 		time.Sleep(time.Duration(cfg.CheckInterval) * time.Second)
 
-		dns.CurrentIP = dns.GetCurrentIP()
-		dns.Records = dns.GetRecords()
+		dns.GetCurrentIP()
+		dns.GetRecords()
 	}
 }

@@ -10,11 +10,11 @@ type Config struct {
 	CheckInterval   int
 	Email           string
 	ReceiverAddress string
-	RecordID        string
+	RecordIDs       []string
 	SenderAddress   string
 	SenderPassword  string
-	ZoneID          string
-	ZoneName        string
+	ZoneIDs         []string
+	ZoneNames       []string
 }
 
 func NewConfig() *Config {
@@ -24,15 +24,15 @@ func NewConfig() *Config {
 		CheckInterval:   utils.GetEnvAsInt("CHECK_INTERVAL", false, 86400),
 		Email:           utils.GetEnv("EMAIL", true, ""),
 		ReceiverAddress: utils.GetEnv("RECEIVER_ADDRESS", false, ""),
-		RecordID:        utils.GetEnv("RECORD_ID", false, ""),
+		RecordIDs:       utils.GetEnvAsStringSlice("RECORD_ID", false, []string{}),
 		SenderAddress:   utils.GetEnv("SENDER_ADDRESS", false, ""),
 		SenderPassword:  utils.GetEnv("SENDER_PASSWORD", false, ""),
-		ZoneID:          utils.GetEnv("ZONE_ID", false, ""),
-		ZoneName:        utils.GetEnv("ZONE_NAME", false, ""),
+		ZoneIDs:         utils.GetEnvAsStringSlice("ZONE_ID", false, []string{}),
+		ZoneNames:       utils.GetEnvAsStringSlice("ZONE_NAME", false, []string{}),
 	}
 	zap.S().Debug("Config loaded")
 
-	if config.ZoneID == "" && config.ZoneName == "" {
+	if len(config.ZoneIDs) == 0 && len(config.ZoneNames) == 0 {
 		zap.S().Fatal("Either ZONE_ID or ZONE_NAME is required")
 	}
 
