@@ -9,6 +9,77 @@ import (
 	"testing"
 )
 
+// TestDns_CheckZoneIDs tests the CheckZoneIDs method
+func TestDns_CheckZoneIDs(t *testing.T) {
+	// Create a new config object
+	cfg := &config.Config{
+		AuthKey: "testAuthKey",
+		Email:   "testEmail",
+		ZoneIDs: []string{"testZoneID1", "testZoneID2"},
+	}
+	// Create a new mock client
+	mockClient := &mocks.MockClient{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			json := `{"success":true,"errors":[],"messages":[],"result":[{"id":"testZoneID1", "name": "testZoneName"}, {"id":"testZoneID2", "name": "testZoneName"}, {"id":"testZoneID3", "name": "testZoneName"}]}`
+			body := io.NopCloser(bytes.NewReader([]byte(json)))
+			return &http.Response{
+				StatusCode: 200,
+				Body:       body,
+			}, nil
+		},
+	}
+	// Create a new dns object
+	dns := &CFDNS{
+		Cfg:        cfg,
+		HTTPClient: mockClient,
+	}
+	// Check the zone ids
+	dns.CheckZoneIDs()
+	if len(dns.ZoneIDs) != 2 {
+		t.Fatalf("CheckZoneIDs() = %d; want 2", len(dns.ZoneIDs))
+	}
+	if dns.ZoneIDs[0] != "testZoneID1" {
+		t.Errorf("CheckZoneIDs() = %s; want testZoneID1", dns.ZoneIDs[0])
+	}
+	if dns.ZoneIDs[1] != "testZoneID2" {
+		t.Errorf("CheckZoneIDs() = %s; want testZoneID2", dns.ZoneIDs[1])
+	}
+}
+
+// TestDns_CheckZoneIDsInvalid tests the CheckZoneIDs method with invalid zone ids
+func TestDns_CheckZoneIDsInvalid(t *testing.T) {
+	// Create a new config object
+	cfg := &config.Config{
+		AuthKey: "testAuthKey",
+		Email:   "testEmail",
+		ZoneIDs: []string{"testZoneID1", "testZoneID2"},
+	}
+	// Create a new mock client
+	mockClient := &mocks.MockClient{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			json := `{"success":true,"errors":[],"messages":[],"result":[{"id":"testZoneID1", "name": "testZoneName"}, {"id":"testZoneID4", "name": "testZoneName"}, {"id":"testZoneID5", "name": "testZoneName"}]}`
+			body := io.NopCloser(bytes.NewReader([]byte(json)))
+			return &http.Response{
+				StatusCode: 200,
+				Body:       body,
+			}, nil
+		},
+	}
+	// Create a new dns object
+	dns := &CFDNS{
+		Cfg:        cfg,
+		HTTPClient: mockClient,
+	}
+	// Check the zone ids
+	dns.CheckZoneIDs()
+	if len(dns.ZoneIDs) != 1 {
+		t.Fatalf("CheckZoneIDs() = %d; want 1", len(dns.ZoneIDs))
+	}
+	if dns.ZoneIDs[0] != "testZoneID1" {
+		t.Errorf("CheckZoneIDs() = %s; want testZoneID1", dns.ZoneIDs[0])
+	}
+}
+
 // TestDns_GetZoneIDs tests the GetZoneId method
 func TestDns_GetZoneIDs(t *testing.T) {
 	// Create a new config object
