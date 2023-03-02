@@ -91,26 +91,37 @@ func NewDNS(cfg *config.Config) *CFDNS {
 
 // CheckZoneIDs checks if the zone ids are valid
 func (dns *CFDNS) CheckZoneIDs() {
+	zap.S().Info("Getting zones info")
+	reqURL := "https://api.cloudflare.com/client/v4/zones/"
+
+	req := createCFRequest(http.MethodGet, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, nil)
+
+	res, err := dns.HTTPClient.Do(req)
+	if err != nil {
+		zap.S().Fatal(err)
+	}
+
+	var resBody ResponseBody
+	unmarshalResponse(res.Body, &resBody)
+	res.Body.Close()
+
+	if !resBody.Success || res.StatusCode != 200 {
+		zap.S().Errorf("Error checking zone id, skipping. HTTP status code: %d. Response body: %v", res.StatusCode, resBody)
+	}
+
 	for _, zoneID := range dns.Cfg.ZoneIDs {
 		zap.S().Infof("Checking zone id %s", zoneID)
-		reqURL := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s", zoneID)
 
-		req := createCFRequest(http.MethodGet, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, nil)
-
-		res, err := dns.HTTPClient.Do(req)
-		if err != nil {
-			zap.S().Fatal(err)
+		for _, zone := range resBody.Result {
+			if zone.ID == zoneID {
+				dns.ZoneIDs = append(dns.ZoneIDs, zoneID)
+				break
+			}
 		}
 
-		var resBody ResponseBody
-		unmarshalResponse(res.Body, &resBody)
-		res.Body.Close()
-
-		if !resBody.Success || res.StatusCode != 200 {
-			zap.S().Errorf("Error checking zone id, skipping. HTTP status code: %d. Response body: %v", res.StatusCode, resBody)
+		if !utils.StringInSlice(zoneID, dns.ZoneIDs) {
+			zap.S().Errorf("Zone id %s is not valid, skipping.", zoneID)
 		}
-
-		dns.ZoneIDs = append(dns.ZoneIDs, zoneID)
 	}
 
 	if len(dns.ZoneIDs) == 0 {
