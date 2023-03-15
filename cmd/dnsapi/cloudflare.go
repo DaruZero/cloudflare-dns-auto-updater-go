@@ -25,35 +25,17 @@ type CFDNS struct {
 }
 
 type Record struct { //nolint:maligned
-	Comment    string `json:"comment"`
-	Content    string `json:"content"`
-	CreatedOn  string `json:"created_on"`
-	Data       Data   `json:"data"`
-	ID         string `json:"id"`
-	Locked     bool   `json:"locked"`
-	Meta       Meta   `json:"meta"`
-	ModifiedOn string `json:"modified_on"`
-	Name       string `json:"name"`
-	Proxiable  bool   `json:"proxiable"`
-	Proxied    bool   `json:"proxied"`
-	TTL        int    `json:"ttl"`
-	Type       string `json:"type"`
-	ZoneID     string `json:"zone_id"`
-	ZoneName   string `json:"zone_name"`
+	Content  string `json:"content"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	ZoneID   string `json:"zone_id"`
+	ZoneName string `json:"zone_name"`
 }
 
-type Meta struct {
-	AutoAdded bool   `json:"auto_added"`
-	Source    string `json:"source"`
-}
-
-type Data struct{}
-
-type ResponseBody struct {
-	Success  bool      `json:"success"`
-	Errors   []Error   `json:"errors"`
-	Messages []Message `json:"messages"`
-	Result   []Record  `json:"result"`
+type Zone struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type Error struct {
@@ -101,6 +83,13 @@ func (dns *CFDNS) CheckZoneIDs() {
 		zap.S().Fatal(err)
 	}
 
+	type ResponseBody struct {
+		Success  bool      `json:"success"`
+		Errors   []Error   `json:"errors"`
+		Messages []Message `json:"messages"`
+		Result   []Zone    `json:"result"`
+	}
+
 	var resBody ResponseBody
 	unmarshalResponse(res.Body, &resBody)
 	res.Body.Close()
@@ -141,6 +130,13 @@ func (dns *CFDNS) GetZoneIDs() {
 		res, err := dns.HTTPClient.Do(req)
 		if err != nil {
 			zap.S().Fatal(err)
+		}
+
+		type ResponseBody struct {
+			Success  bool      `json:"success"`
+			Errors   []Error   `json:"errors"`
+			Messages []Message `json:"messages"`
+			Result   []Zone    `json:"result"`
 		}
 
 		var resBody ResponseBody
@@ -219,6 +215,13 @@ func (dns *CFDNS) GetRecords() {
 			zap.S().Fatal(err)
 		}
 
+		type ResponseBody struct {
+			Success  bool      `json:"success"`
+			Errors   []Error   `json:"errors"`
+			Messages []Message `json:"messages"`
+			Result   []Record  `json:"result"`
+		}
+
 		var resBody ResponseBody
 		unmarshalResponse(res.Body, &resBody)
 		res.Body.Close()
@@ -277,6 +280,13 @@ func (dns *CFDNS) UpdateRecords() (updatedRecords map[string][]string) {
 				res, err := dns.HTTPClient.Do(req)
 				if err != nil {
 					zap.S().Fatal(err)
+				}
+
+				type ResponseBody struct {
+					Success  bool      `json:"success"`
+					Errors   []Error   `json:"errors"`
+					Messages []Message `json:"messages"`
+					Result   Record    `json:"result"`
 				}
 
 				var resBody ResponseBody

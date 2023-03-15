@@ -247,7 +247,7 @@ func TestDns_UpdateRecord(t *testing.T) {
 	// Create a new mock client
 	mockClient := &mocks.MockClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			json := `{"success":true,"errors":[],"messages":[],"result":[]}`
+			json := `{"success":true,"errors":[],"messages":[],"result":{}}`
 			body := io.NopCloser(bytes.NewReader([]byte(json)))
 			return &http.Response{
 				StatusCode: 200,
