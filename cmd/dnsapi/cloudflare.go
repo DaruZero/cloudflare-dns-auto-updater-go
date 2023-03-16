@@ -234,21 +234,8 @@ func (dns *CFDNS) GetRecords() {
 			zap.S().Fatalf("No records found for zone id %s", zoneID)
 		}
 
-		if len(dns.Cfg.RecordIDs) > 0 {
-			for _, record := range resBody.Result {
-				if record.Type == "A" && utils.StringInSlice(record.ID, dns.Cfg.RecordIDs) {
-					zap.S().Info("Found record for given id")
-					dns.Records[zoneID] = append(dns.Records[zoneID], record)
-				}
-			}
-			if len(dns.Records[zoneID]) == 0 {
-				zap.S().Fatalf("No records found for given ids")
-			}
-			continue
-		}
-
 		for _, record := range resBody.Result {
-			if record.Type == "A" {
+			if record.Type == "A" || (len(dns.Cfg.RecordIDs) > 0 && utils.StringInSlice(record.ID, dns.Cfg.RecordIDs)) {
 				dns.Records[zoneID] = append(dns.Records[zoneID], record)
 			}
 		}
