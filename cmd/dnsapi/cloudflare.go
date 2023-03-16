@@ -24,7 +24,7 @@ type CFDNS struct {
 	HTTPClient HTTPClient
 }
 
-type Record struct { //nolint:maligned
+type Record struct {
 	Content  string `json:"content"`
 	ID       string `json:"id"`
 	Name     string `json:"name"`
@@ -234,10 +234,26 @@ func (dns *CFDNS) GetRecords() {
 			zap.S().Fatalf("No records found for zone id %s", zoneID)
 		}
 
+		recordsMap := make(map[string]Record)
 		for _, record := range resBody.Result {
-			if record.Type == "A" || (len(dns.Cfg.RecordIDs) > 0 && utils.StringInSlice(record.ID, dns.Cfg.RecordIDs)) {
-				dns.Records[zoneID] = append(dns.Records[zoneID], record)
+			if record.Type == "A" && (len(dns.Cfg.RecordIDs) == 0 || utils.StringInSlice(record.ID, dns.Cfg.RecordIDs)) {
+				recordsMap[record.Name] = record
 			}
+		}
+
+		if _, ok := dns.Records[zoneID]; !ok {
+			dns.Records[zoneID] = make([]Record, 0)
+		}
+
+		for i, record := range dns.Records[zoneID] {
+			if updatedRecord, ok := recordsMap[record.Name]; ok {
+				dns.Records[zoneID][i] = updatedRecord
+				delete(recordsMap, record.Name)
+			}
+		}
+
+		for _, newRecord := range recordsMap {
+			dns.Records[zoneID] = append(dns.Records[zoneID], newRecord)
 		}
 
 		if len(dns.Records[zoneID]) == 0 {
