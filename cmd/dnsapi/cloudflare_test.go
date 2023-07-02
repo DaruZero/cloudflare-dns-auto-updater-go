@@ -20,7 +20,7 @@ func TestDns_CheckZoneIDs(t *testing.T) {
 	// Create a new mock client
 	mockClient := &mocks.MockClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			json := `{"success":true,"errors":[],"messages":[],"result":[{"id":"testZoneID1", "name": "testZoneName"}, {"id":"testZoneID2", "name": "testZoneName"}, {"id":"testZoneID3", "name": "testZoneName"}]}`
+			json := `{"success":true,"errors":[],"messages":[],"result":[{"id":"testZoneID1", "name": "testZoneName1"}, {"id":"testZoneID2", "name": "testZoneName2"}, {"id":"testZoneID3", "name": "testZoneName"}]}`
 			body := io.NopCloser(bytes.NewReader([]byte(json)))
 			return &http.Response{
 				StatusCode: 200,
@@ -35,14 +35,20 @@ func TestDns_CheckZoneIDs(t *testing.T) {
 	}
 	// Check the zone ids
 	dns.CheckZoneIDs()
-	if len(dns.ZoneIDs) != 2 {
-		t.Fatalf("CheckZoneIDs() = %d; want 2", len(dns.ZoneIDs))
+	if len(dns.Zones) != 2 {
+		t.Fatalf("CheckZoneIDs() = %d; want 2", len(dns.Zones))
 	}
-	if dns.ZoneIDs[0] != "testZoneID1" {
-		t.Errorf("CheckZoneIDs() = %s; want testZoneID1", dns.ZoneIDs[0])
+	if dns.Zones[0].ID != "testZoneID1" {
+		t.Errorf("CheckZoneIDs() = %s; want testZoneID1", dns.Zones[0].ID)
 	}
-	if dns.ZoneIDs[1] != "testZoneID2" {
-		t.Errorf("CheckZoneIDs() = %s; want testZoneID2", dns.ZoneIDs[1])
+	if dns.Zones[1].ID != "testZoneID2" {
+		t.Errorf("CheckZoneIDs() = %s; want testZoneID2", dns.Zones[1].ID)
+	}
+	if dns.Zones[0].Name != "testZoneName1" {
+		t.Errorf("CheckZoneIDs() = %s; want testZoneName", dns.Zones[0].Name)
+	}
+	if dns.Zones[1].Name != "testZoneName2" {
+		t.Errorf("CheckZoneIDs() = %s; want testZoneName", dns.Zones[1].Name)
 	}
 }
 
@@ -57,7 +63,7 @@ func TestDns_CheckZoneIDsInvalid(t *testing.T) {
 	// Create a new mock client
 	mockClient := &mocks.MockClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			json := `{"success":true,"errors":[],"messages":[],"result":[{"id":"testZoneID1", "name": "testZoneName"}, {"id":"testZoneID4", "name": "testZoneName"}, {"id":"testZoneID5", "name": "testZoneName"}]}`
+			json := `{"success":true,"errors":[],"messages":[],"result":[{"id":"testZoneID1", "name": "testZoneName1"}, {"id":"testZoneID4", "name": "testZoneName2"}, {"id":"testZoneID5", "name": "testZoneName"}]}`
 			body := io.NopCloser(bytes.NewReader([]byte(json)))
 			return &http.Response{
 				StatusCode: 200,
@@ -72,11 +78,14 @@ func TestDns_CheckZoneIDsInvalid(t *testing.T) {
 	}
 	// Check the zone ids
 	dns.CheckZoneIDs()
-	if len(dns.ZoneIDs) != 1 {
-		t.Fatalf("CheckZoneIDs() = %d; want 1", len(dns.ZoneIDs))
+	if len(dns.Zones) != 1 {
+		t.Fatalf("CheckZoneIDs() = %d; want 1", len(dns.Zones))
 	}
-	if dns.ZoneIDs[0] != "testZoneID1" {
-		t.Errorf("CheckZoneIDs() = %s; want testZoneID1", dns.ZoneIDs[0])
+	if dns.Zones[0].ID != "testZoneID1" {
+		t.Errorf("CheckZoneIDs() = %s; want testZoneID1", dns.Zones[0].ID)
+	}
+	if dns.Zones[0].Name != "testZoneName1" {
+		t.Errorf("CheckZoneIDs() = %s; want testZoneName", dns.Zones[0].Name)
 	}
 }
 
@@ -107,11 +116,14 @@ func TestDns_GetZoneIDs(t *testing.T) {
 	// Get the zone id
 	dns.GetZoneIDs()
 	// Check the zone id
-	if len(dns.ZoneIDs) != 1 {
-		t.Fatalf("GetZoneIDs() = %d; want 1", len(dns.ZoneIDs))
+	if len(dns.Zones) != 1 {
+		t.Fatalf("GetZoneIDs() = %d; want 1", len(dns.Zones))
 	}
-	if dns.ZoneIDs[0] != "testID" {
-		t.Errorf("GetZoneIDs() = %s; want testID", dns.ZoneIDs[0])
+	if dns.Zones[0].ID != "testID" {
+		t.Errorf("GetZoneIDs() = %s; want testID", dns.Zones[0].ID)
+	}
+	if dns.Zones[0].Name != "testZoneName" {
+		t.Errorf("GetZoneIDs() = %s; want testZoneName", dns.Zones[0].Name)
 	}
 }
 
@@ -161,7 +173,7 @@ func TestDns_GetRecordsNoRecordID(t *testing.T) {
 		Cfg:        cfg,
 		HTTPClient: mockClient,
 		Records:    make(map[string][]Record),
-		ZoneIDs:    []string{"testZoneID"},
+		Zones:      []Zone{{ID: "testZoneID", Name: "testZoneName"}},
 	}
 	// Get the records
 	dns.GetRecords()
@@ -169,21 +181,21 @@ func TestDns_GetRecordsNoRecordID(t *testing.T) {
 	if len(dns.Records) != 1 {
 		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records))
 	}
-	if len(dns.Records["testZoneID"]) != 1 {
+	if len(dns.Records["testZoneName"]) != 1 {
 		t.Logf("%+v", dns.Records)
 		t.Logf("%+v", dns.Records["testZoneID"])
 		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records["testZoneID"]))
 	}
-	if dns.Records["testZoneID"][0].ID != "testRecordID" {
+	if dns.Records["testZoneName"][0].ID != "testRecordID" {
 		t.Errorf("GetRecords() = %s; want testRecordID", dns.Records["testZoneID"][0].ID)
 	}
-	if dns.Records["testZoneID"][0].Name != "testRecordName" {
+	if dns.Records["testZoneName"][0].Name != "testRecordName" {
 		t.Errorf("GetRecords() = %s; want testRecordName", dns.Records["testZoneID"][0].Name)
 	}
-	if dns.Records["testZoneID"][0].Type != "A" {
+	if dns.Records["testZoneName"][0].Type != "A" {
 		t.Errorf("GetRecords() = %s; want A", dns.Records["testZoneID"][0].Type)
 	}
-	if dns.Records["testZoneID"][0].Content != "testContent" {
+	if dns.Records["testZoneName"][0].Content != "testContent" {
 		t.Errorf("GetRecords() = %s; want testContent", dns.Records["testZoneID"][0].Content)
 	}
 }
@@ -212,7 +224,7 @@ func TestDns_GetRecordsWithRecordID(t *testing.T) {
 		Cfg:        cfg,
 		HTTPClient: mockClient,
 		Records:    make(map[string][]Record),
-		ZoneIDs:    []string{"testZoneID"},
+		Zones:      []Zone{{ID: "testZoneID", Name: "testZoneName"}},
 	}
 	// Get the records
 	dns.GetRecords()
@@ -220,19 +232,19 @@ func TestDns_GetRecordsWithRecordID(t *testing.T) {
 	if len(dns.Records) != 1 {
 		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records))
 	}
-	if len(dns.Records["testZoneID"]) != 1 {
+	if len(dns.Records["testZoneName"]) != 1 {
 		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records["testZoneID"]))
 	}
-	if dns.Records["testZoneID"][0].ID != "testRecordID" {
+	if dns.Records["testZoneName"][0].ID != "testRecordID" {
 		t.Fatalf("GetRecords() = %s; want testRecordID", dns.Records["testZoneID"][0].ID)
 	}
-	if dns.Records["testZoneID"][0].Name != "testRecordName" {
+	if dns.Records["testZoneName"][0].Name != "testRecordName" {
 		t.Errorf("GetRecords() = %s; want testRecordName", dns.Records["testZoneID"][0].Name)
 	}
-	if dns.Records["testZoneID"][0].Type != "A" {
+	if dns.Records["testZoneName"][0].Type != "A" {
 		t.Errorf("GetRecords() = %s; want A", dns.Records["testZoneID"][0].Type)
 	}
-	if dns.Records["testZoneID"][0].Content != "testContent" {
+	if dns.Records["testZoneName"][0].Content != "testContent" {
 		t.Errorf("GetRecords() = %s; want testContent", dns.Records["testZoneID"][0].Content)
 	}
 }
