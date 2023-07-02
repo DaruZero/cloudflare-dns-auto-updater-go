@@ -7,14 +7,14 @@ import (
 
 type Config struct {
 	AuthKey         string
-	CheckInterval   int
 	Email           string
 	ReceiverAddress string
-	RecordIDs       []string
 	SenderAddress   string
 	SenderPassword  string
+	RecordIDs       []string
 	ZoneIDs         []string
 	ZoneNames       []string
+	CheckInterval   int
 }
 
 func NewConfig() *Config {

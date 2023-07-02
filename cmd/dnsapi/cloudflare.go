@@ -17,11 +17,11 @@ type HTTPClient interface {
 }
 
 type CFDNS struct {
-	Cfg        *config.Config
-	CurrentIP  string
-	ZoneIDs    []string
-	Records    map[string][]Record
 	HTTPClient HTTPClient
+	Cfg        *config.Config
+	Records    map[string][]Record
+	CurrentIP  string
+	Zones      []Zone
 }
 
 type Record struct {
@@ -39,13 +39,13 @@ type Zone struct {
 }
 
 type Error struct {
-	Code    int    `json:"code"`
 	Message string `json:"message"`
+	Code    int    `json:"code"`
 }
 
 type Message struct {
-	Code    int    `json:"code"`
 	Message string `json:"message"`
+	Code    int    `json:"code"`
 }
 
 // NewDNS creates a new Dns struct instance
@@ -84,10 +84,10 @@ func (dns *CFDNS) CheckZoneIDs() {
 	}
 
 	type ResponseBody struct {
-		Success  bool      `json:"success"`
 		Errors   []Error   `json:"errors"`
 		Messages []Message `json:"messages"`
 		Result   []Zone    `json:"result"`
+		Success  bool      `json:"success"`
 	}
 
 	var resBody ResponseBody
@@ -100,20 +100,22 @@ func (dns *CFDNS) CheckZoneIDs() {
 
 	for _, zoneID := range dns.Cfg.ZoneIDs {
 		zap.S().Infof("Checking zone id %s", zoneID)
+		isValid := false
 
 		for _, zone := range resBody.Result {
 			if zone.ID == zoneID {
-				dns.ZoneIDs = append(dns.ZoneIDs, zoneID)
+				dns.Zones = append(dns.Zones, zone)
+				isValid = true
 				break
 			}
 		}
 
-		if !utils.StringInSlice(zoneID, dns.ZoneIDs) {
-			zap.S().Errorf("Zone id %s is not valid, skipping.", zoneID)
+		if !isValid {
+			zap.S().Warnf("Zone id %s is not valid, skipping.", zoneID)
 		}
 	}
 
-	if len(dns.ZoneIDs) == 0 {
+	if len(dns.Zones) == 0 {
 		zap.S().Fatal("No valid zone ids found")
 	}
 }
@@ -122,7 +124,6 @@ func (dns *CFDNS) CheckZoneIDs() {
 func (dns *CFDNS) GetZoneIDs() {
 	for _, zoneName := range dns.Cfg.ZoneNames {
 		zap.S().Infof("Getting zone id for %s", zoneName)
-		zoneID := ""
 		reqURL := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones?name=%s", zoneName)
 
 		req := createCFRequest(http.MethodGet, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, nil)
@@ -133,10 +134,10 @@ func (dns *CFDNS) GetZoneIDs() {
 		}
 
 		type ResponseBody struct {
-			Success  bool      `json:"success"`
 			Errors   []Error   `json:"errors"`
 			Messages []Message `json:"messages"`
 			Result   []Zone    `json:"result"`
+			Success  bool      `json:"success"`
 		}
 
 		var resBody ResponseBody
@@ -153,15 +154,13 @@ func (dns *CFDNS) GetZoneIDs() {
 
 		for _, zone := range resBody.Result {
 			if strings.EqualFold(zone.Name, zoneName) {
-				zoneID = zone.ID
+				dns.Zones = append(dns.Zones, zone)
 				break
 			}
 		}
-
-		dns.ZoneIDs = append(dns.ZoneIDs, zoneID)
 	}
 
-	if len(dns.ZoneIDs) == 0 {
+	if len(dns.Zones) == 0 {
 		zap.S().Fatal("No zone ids found")
 	}
 }
@@ -205,8 +204,8 @@ func (dns *CFDNS) GetCurrentIP() {
 // GetRecords gets all the records for the zone
 func (dns *CFDNS) GetRecords() {
 	zap.S().Info("Getting records")
-	for _, zoneID := range dns.ZoneIDs {
-		reqURL := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/dns_records", zoneID)
+	for _, zone := range dns.Zones {
+		reqURL := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/dns_records", zone.ID)
 
 		req := createCFRequest(http.MethodGet, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, nil)
 
@@ -216,10 +215,10 @@ func (dns *CFDNS) GetRecords() {
 		}
 
 		type ResponseBody struct {
-			Success  bool      `json:"success"`
 			Errors   []Error   `json:"errors"`
 			Messages []Message `json:"messages"`
 			Result   []Record  `json:"result"`
+			Success  bool      `json:"success"`
 		}
 
 		var resBody ResponseBody
@@ -231,7 +230,7 @@ func (dns *CFDNS) GetRecords() {
 		}
 
 		if len(resBody.Result) == 0 {
-			zap.S().Fatalf("No records found for zone id %s", zoneID)
+			zap.S().Fatalf("No records found for zone id %s", zone.Name)
 		}
 
 		recordsMap := make(map[string]Record)
@@ -241,23 +240,23 @@ func (dns *CFDNS) GetRecords() {
 			}
 		}
 
-		if _, ok := dns.Records[zoneID]; !ok {
-			dns.Records[zoneID] = make([]Record, 0)
+		if _, ok := dns.Records[zone.Name]; !ok {
+			dns.Records[zone.Name] = make([]Record, 0)
 		}
 
-		for i, record := range dns.Records[zoneID] {
+		for i, record := range dns.Records[zone.Name] {
 			if updatedRecord, ok := recordsMap[record.Name]; ok {
-				dns.Records[zoneID][i] = updatedRecord
+				dns.Records[zone.Name][i] = updatedRecord
 				delete(recordsMap, record.Name)
 			}
 		}
 
 		for _, newRecord := range recordsMap {
-			dns.Records[zoneID] = append(dns.Records[zoneID], newRecord)
+			dns.Records[zone.Name] = append(dns.Records[zone.Name], newRecord)
 		}
 
-		if len(dns.Records[zoneID]) == 0 {
-			zap.S().Errorf("No records found for zone id %s", zoneID)
+		if len(dns.Records[zone.Name]) == 0 {
+			zap.S().Errorf("No records found for zone %s", zone.Name)
 		}
 	}
 
@@ -286,10 +285,10 @@ func (dns *CFDNS) UpdateRecords() (updatedRecords map[string][]string) {
 				}
 
 				type ResponseBody struct {
-					Success  bool      `json:"success"`
+					Result   Record    `json:"result"`
 					Errors   []Error   `json:"errors"`
 					Messages []Message `json:"messages"`
-					Result   Record    `json:"result"`
+					Success  bool      `json:"success"`
 				}
 
 				var resBody ResponseBody
