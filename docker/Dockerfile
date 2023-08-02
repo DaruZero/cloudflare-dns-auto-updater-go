@@ -1,4 +1,4 @@
-FROM docker.io/golang:1.20.6-alpine3.17 as builder
+FROM docker.io/golang:1.20.7-alpine3.17 as builder
 
 WORKDIR /build
 
