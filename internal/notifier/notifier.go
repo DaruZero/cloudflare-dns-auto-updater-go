@@ -3,7 +3,7 @@ package notifier
 import (
 	"net/smtp"
 
-	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/config"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/config"
 	"go.uber.org/zap"
 )
 

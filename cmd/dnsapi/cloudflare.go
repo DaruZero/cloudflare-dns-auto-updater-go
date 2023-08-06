@@ -3,7 +3,7 @@ package dnsapi
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/config"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/config"
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/pkg/utils"
 	"go.uber.org/zap"
 	"io"

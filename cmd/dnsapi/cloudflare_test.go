@@ -2,7 +2,7 @@ package dnsapi
 
 import (
 	"bytes"
-	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/config"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/config"
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/test/mocks"
 	"io"
 	"net/http"
