@@ -17,7 +17,7 @@ type Config struct {
 	CheckInterval   int
 }
 
-func NewConfig() *Config {
+func New() *Config {
 	zap.S().Info("Loading configuration")
 	config := &Config{
 		AuthKey:         env.GetEnv("AUTH_KEY", true, ""),

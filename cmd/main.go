@@ -21,7 +21,7 @@ func main() {
 
 	zap.S().Info("Starting Cloudflare CFDNS Auto Updater")
 
-	cfg := config.NewConfig()
+	cfg := config.New()
 
 	dns := dnsapi.NewDNS(cfg)
 
