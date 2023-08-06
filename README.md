@@ -12,7 +12,7 @@ It will continuously run and fetch your public IP at a given interval, detecting
 
 This is based on the [daruzero/cloudflare-dns-auto-updater](https://github.com/DaruZero/cloudflare-dns-auto-updater) python script, but it has been rewritten in Go.
 
-> Be aware, this only works if you are using the Cloudflare DNS.
+> ⚠️ Be aware, this only works if you are using the Cloudflare DNS.
 
 ## Requirements
 
@@ -33,7 +33,7 @@ This is based on the [daruzero/cloudflare-dns-auto-updater](https://github.com/D
     daruzero/cfautoupdater-go:latest
   ```
 
-- Docker Compose (see `.env.example` for the env file)
+- Docker Compose (see <code><a href="./build/.env.example">.env.example</a></code> for the env file)
 
   ```yaml
   version: '3.8'
