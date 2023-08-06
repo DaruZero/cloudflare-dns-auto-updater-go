@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	log := logger.NewLogger("LOG_LEVEL")
+	log := logger.New("LOG_LEVEL")
 	defer func(logger *zap.SugaredLogger) {
 		err := logger.Sync()
 		if err != nil {

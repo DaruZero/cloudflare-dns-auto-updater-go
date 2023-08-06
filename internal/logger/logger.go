@@ -1,15 +1,16 @@
 package logger
 
 import (
+	"log"
+	"os"
+
 	"go.elastic.co/ecszap"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"log"
-	"os"
 )
 
-// NewLogger creates a new logger
-func NewLogger(logLevelEnv string) *zap.SugaredLogger {
+// New creates a new logger
+func New(logLevelEnv string) *zap.SugaredLogger {
 	logLevel := os.Getenv(logLevelEnv)
 	if logLevel == "" {
 		logLevel = "info"
