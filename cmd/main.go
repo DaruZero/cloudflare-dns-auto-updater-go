@@ -4,13 +4,13 @@ import (
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/config"
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/dnsapi"
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/notification"
-	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/utils"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/logger"
 	"go.uber.org/zap"
 	"time"
 )
 
 func main() {
-	log := utils.NewLogger("LOG_LEVEL")
+	log := logger.NewLogger("LOG_LEVEL")
 	defer func(logger *zap.SugaredLogger) {
 		err := logger.Sync()
 		if err != nil {
