@@ -23,7 +23,7 @@ func main() {
 
 	cfg := config.New()
 
-	dns := dnsapi.NewDNS(cfg)
+	dns := dnsapi.New(cfg)
 
 	var notify *notifier.Notifier
 	if cfg.SenderAddress != "" && cfg.SenderPassword != "" && cfg.ReceiverAddress != "" {
