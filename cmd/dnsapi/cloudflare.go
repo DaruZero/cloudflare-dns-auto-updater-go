@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/config"
-	"github.com/daruzero/cloudflare-dns-auto-updater-go/pkg/env"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/pkg/utils"
 	"go.uber.org/zap"
 	"io"
 	"net/http"
@@ -235,7 +235,7 @@ func (dns *CFDNS) GetRecords() {
 
 		recordsMap := make(map[string]Record)
 		for _, record := range resBody.Result {
-			if record.Type == "A" && (len(dns.Cfg.RecordIDs) == 0 || env.StringInSlice(record.ID, dns.Cfg.RecordIDs)) {
+			if record.Type == "A" && (len(dns.Cfg.RecordIDs) == 0 || utils.StringInSlice(record.ID, dns.Cfg.RecordIDs)) {
 				recordsMap[record.Name] = record
 			}
 		}
