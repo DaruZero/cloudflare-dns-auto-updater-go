@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/utils"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/pkg/env"
 	"go.uber.org/zap"
 )
 
@@ -20,15 +20,15 @@ type Config struct {
 func NewConfig() *Config {
 	zap.S().Info("Loading configuration")
 	config := &Config{
-		AuthKey:         utils.GetEnv("AUTH_KEY", true, ""),
-		CheckInterval:   utils.GetEnvAsInt("CHECK_INTERVAL", false, 86400),
-		Email:           utils.GetEnv("EMAIL", true, ""),
-		ReceiverAddress: utils.GetEnv("RECEIVER_ADDRESS", false, ""),
-		RecordIDs:       utils.GetEnvAsStringSlice("RECORD_ID", false, []string{}),
-		SenderAddress:   utils.GetEnv("SENDER_ADDRESS", false, ""),
-		SenderPassword:  utils.GetEnv("SENDER_PASSWORD", false, ""),
-		ZoneIDs:         utils.GetEnvAsStringSlice("ZONE_ID", false, []string{}),
-		ZoneNames:       utils.GetEnvAsStringSlice("ZONE_NAME", false, []string{}),
+		AuthKey:         env.GetEnv("AUTH_KEY", true, ""),
+		CheckInterval:   env.GetEnvAsInt("CHECK_INTERVAL", false, 86400),
+		Email:           env.GetEnv("EMAIL", true, ""),
+		ReceiverAddress: env.GetEnv("RECEIVER_ADDRESS", false, ""),
+		RecordIDs:       env.GetEnvAsStringSlice("RECORD_ID", false, []string{}),
+		SenderAddress:   env.GetEnv("SENDER_ADDRESS", false, ""),
+		SenderPassword:  env.GetEnv("SENDER_PASSWORD", false, ""),
+		ZoneIDs:         env.GetEnvAsStringSlice("ZONE_ID", false, []string{}),
+		ZoneNames:       env.GetEnvAsStringSlice("ZONE_NAME", false, []string{}),
 	}
 	zap.S().Debug("Config loaded")
 
