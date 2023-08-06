@@ -1,16 +1,17 @@
 package main
 
 import (
-	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/config"
-	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/dnsapi"
-	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/notification"
-	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/utils"
-	"go.uber.org/zap"
 	"time"
+
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/dnsapi"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/config"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/logger"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/notifier"
+	"go.uber.org/zap"
 )
 
 func main() {
-	log := utils.NewLogger("LOG_LEVEL")
+	log := logger.New("LOG_LEVEL")
 	defer func(logger *zap.SugaredLogger) {
 		err := logger.Sync()
 		if err != nil {
@@ -20,21 +21,21 @@ func main() {
 
 	zap.S().Info("Starting Cloudflare CFDNS Auto Updater")
 
-	cfg := config.NewConfig()
+	cfg := config.New()
 
-	dns := dnsapi.NewDNS(cfg)
+	dns := dnsapi.New(cfg)
 
-	var notifier *notification.Notifier
+	var notify *notifier.Notifier
 	if cfg.SenderAddress != "" && cfg.SenderPassword != "" && cfg.ReceiverAddress != "" {
-		notifier = notification.NewNotifier(cfg)
+		notify = notifier.New(cfg)
 	}
 
 	for {
 		updatedRecords := dns.UpdateRecords()
 		if len(updatedRecords) > 0 {
 			zap.S().Infof("Updated %d records", len(updatedRecords))
-			if notifier != nil {
-				err := notifier.SendEmail(updatedRecords, dns.CurrentIP)
+			if notify != nil {
+				err := notify.SendEmail(updatedRecords, dns.CurrentIP)
 				if err != nil {
 					zap.S().Errorf("Error sending email: %s", err)
 				}

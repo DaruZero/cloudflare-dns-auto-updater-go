@@ -3,13 +3,14 @@ package dnsapi
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/config"
-	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/utils"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/config"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/pkg/utils"
+	"go.uber.org/zap"
 )
 
 type HTTPClient interface {
@@ -48,8 +49,8 @@ type Message struct {
 	Code    int    `json:"code"`
 }
 
-// NewDNS creates a new Dns struct instance
-func NewDNS(cfg *config.Config) *CFDNS {
+// New creates a new Dns struct instance
+func New(cfg *config.Config) *CFDNS {
 	zap.S().Debug("Creating new Dns struct")
 	dns := &CFDNS{
 		Cfg: cfg,
