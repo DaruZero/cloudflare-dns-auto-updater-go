@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/config"
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/dnsapi"
-	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/notification"
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/logger"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/notifier"
 	"go.uber.org/zap"
 	"time"
 )
@@ -24,17 +24,17 @@ func main() {
 
 	dns := dnsapi.NewDNS(cfg)
 
-	var notifier *notification.Notifier
+	var notify *notifier.Notifier
 	if cfg.SenderAddress != "" && cfg.SenderPassword != "" && cfg.ReceiverAddress != "" {
-		notifier = notification.NewNotifier(cfg)
+		notify = notifier.NewNotifier(cfg)
 	}
 
 	for {
 		updatedRecords := dns.UpdateRecords()
 		if len(updatedRecords) > 0 {
 			zap.S().Infof("Updated %d records", len(updatedRecords))
-			if notifier != nil {
-				err := notifier.SendEmail(updatedRecords, dns.CurrentIP)
+			if notify != nil {
+				err := notify.SendEmail(updatedRecords, dns.CurrentIP)
 				if err != nil {
 					zap.S().Errorf("Error sending email: %s", err)
 				}

@@ -1,4 +1,4 @@
-package notification
+package notifier
 
 import (
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/config"
