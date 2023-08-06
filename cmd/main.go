@@ -1,12 +1,13 @@
 package main
 
 import (
+	"time"
+
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/config"
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/dnsapi"
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/logger"
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/notifier"
 	"go.uber.org/zap"
-	"time"
 )
 
 func main() {
@@ -26,7 +27,7 @@ func main() {
 
 	var notify *notifier.Notifier
 	if cfg.SenderAddress != "" && cfg.SenderPassword != "" && cfg.ReceiverAddress != "" {
-		notify = notifier.NewNotifier(cfg)
+		notify = notifier.New(cfg)
 	}
 
 	for {
