@@ -1,18 +1,16 @@
 FROM docker.io/golang:1.20.7-alpine3.17 as builder
 
-WORKDIR /build
+WORKDIR /go/src/github.com/daruzero/cloudflare-dns-autoupdater-go
 
-COPY go.mod go.sum ./
+COPY . .
 
-RUN go mod download && go mod verify
+RUN GOOS=linux go build -o app ./cmd
 
-COPY cmd/ ./cmd/
-
-RUN GOOS=linux go build -o build/ ./...
+RUN chmod +x app
 
 FROM scratch
 
-COPY --from=builder /build/build/cmd /app
+COPY --from=builder /go/src/github.com/daruzero/cloudflare-dns-autoupdater-go/app /app
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
