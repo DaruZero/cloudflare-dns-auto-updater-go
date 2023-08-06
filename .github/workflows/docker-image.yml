@@ -4,7 +4,13 @@ on:
   push:
     paths:
       - "cmd/**"
-      - "docker/Dockerfile"
+      - "internal/**"
+      - "pkg/**"
+      - "go.mod"
+      - "go.sum"
+      - "vendor/**"
+      - "./build/package/Dockerfile"
+      - ".github/workflows/docker-image.yml"
 
 jobs:
 
