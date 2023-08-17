@@ -275,7 +275,7 @@ func (dns *CFDNS) UpdateRecords() (updatedRecords map[string][]string) {
 		for _, record := range records {
 			if record.Content != dns.CurrentIP {
 				zap.S().Infof("Updating record %s", record.Name)
-				reqURL := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/dns_records/%s", zoneName, record.ID)
+				reqURL := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/dns_records/%s", record.ZoneID, record.ID)
 
 				payload := strings.NewReader(fmt.Sprintf(`{"content":"%s"}`, dns.CurrentIP))
 				req := createCFRequest(http.MethodPatch, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, payload)
