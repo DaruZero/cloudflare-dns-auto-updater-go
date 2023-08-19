@@ -19,6 +19,10 @@ go-vendor:
 go-test:
 	@go test $(TEST_FLAGS) $(DIRS)
 
+go-fmt:
+	@go fmt $(DIRS)
+	@fieldalignment -fix $(DIRS)
+
 docker: docker-build docker-push
 
 docker-build:
