@@ -2,15 +2,19 @@ package dnsapi
 
 import (
 	"bytes"
-	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/config"
-	"github.com/daruzero/cloudflare-dns-auto-updater-go/test/mocks"
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/config"
+	"github.com/daruzero/cloudflare-dns-auto-updater-go/test/mocks"
+	"go.uber.org/zap"
 )
 
 // TestDns_CheckZoneIDs tests the CheckZoneIDs method
 func TestDns_CheckZoneIDs(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	zap.ReplaceGlobals(logger)
 	// Create a new config object
 	cfg := &config.Config{
 		AuthKey: "testAuthKey",
@@ -34,7 +38,7 @@ func TestDns_CheckZoneIDs(t *testing.T) {
 		HTTPClient: mockClient,
 	}
 	// Check the zone ids
-	dns.CheckZoneIDs()
+	dns.checkZoneIDs()
 	if len(dns.Zones) != 2 {
 		t.Fatalf("CheckZoneIDs() = %d; want 2", len(dns.Zones))
 	}
@@ -54,6 +58,8 @@ func TestDns_CheckZoneIDs(t *testing.T) {
 
 // TestDns_CheckZoneIDsInvalid tests the CheckZoneIDs method with invalid zone ids
 func TestDns_CheckZoneIDsInvalid(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	zap.ReplaceGlobals(logger)
 	// Create a new config object
 	cfg := &config.Config{
 		AuthKey: "testAuthKey",
@@ -77,7 +83,7 @@ func TestDns_CheckZoneIDsInvalid(t *testing.T) {
 		HTTPClient: mockClient,
 	}
 	// Check the zone ids
-	dns.CheckZoneIDs()
+	dns.checkZoneIDs()
 	if len(dns.Zones) != 1 {
 		t.Fatalf("CheckZoneIDs() = %d; want 1", len(dns.Zones))
 	}
@@ -91,6 +97,8 @@ func TestDns_CheckZoneIDsInvalid(t *testing.T) {
 
 // TestDns_GetZoneIDs tests the GetZoneId method
 func TestDns_GetZoneIDs(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	zap.ReplaceGlobals(logger)
 	// Create a new config object
 	cfg := &config.Config{
 		AuthKey:   "testAuthKey",
@@ -114,7 +122,7 @@ func TestDns_GetZoneIDs(t *testing.T) {
 		HTTPClient: mockClient,
 	}
 	// Get the zone id
-	dns.GetZoneIDs()
+	dns.getZoneIDs()
 	// Check the zone id
 	if len(dns.Zones) != 1 {
 		t.Fatalf("GetZoneIDs() = %d; want 1", len(dns.Zones))
@@ -127,31 +135,10 @@ func TestDns_GetZoneIDs(t *testing.T) {
 	}
 }
 
-// TestDns_GetCurrentIP tests the GetCurrentIP method
-func TestDns_GetCurrentIP(t *testing.T) {
-	// Create a new mock client
-	mockClient := &mocks.MockClient{
-		DoFunc: func(req *http.Request) (*http.Response, error) {
-			return &http.Response{
-				StatusCode: 200,
-				Body:       io.NopCloser(bytes.NewReader([]byte(`testIP`))),
-			}, nil
-		},
-	}
-	// Create a new dns object
-	dns := &CFDNS{
-		HTTPClient: mockClient,
-	}
-	// Get the current IP
-	dns.GetCurrentIP()
-	// Check the current IP
-	if dns.CurrentIP != "testIP" {
-		t.Errorf("GetCurrentIP() = %s; want testIP", dns.CurrentIP)
-	}
-}
-
 // TestDns_GetRecordsNoRecordID tests the GetRecords method
 func TestDns_GetRecordsNoRecordID(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	zap.ReplaceGlobals(logger)
 	// Create a new config object
 	cfg := &config.Config{
 		AuthKey: "testAuthKey",
@@ -176,7 +163,7 @@ func TestDns_GetRecordsNoRecordID(t *testing.T) {
 		Zones:      []Zone{{ID: "testZoneID", Name: "testZoneName"}},
 	}
 	// Get the records
-	dns.GetRecords()
+	dns.getRecords()
 	// Check the records
 	if len(dns.Records) != 1 {
 		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records))
@@ -202,6 +189,8 @@ func TestDns_GetRecordsNoRecordID(t *testing.T) {
 
 // TestDns_GetRecordsWithRecordID tests the GetRecords method
 func TestDns_GetRecordsWithRecordID(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	zap.ReplaceGlobals(logger)
 	// Create a new config object
 	cfg := &config.Config{
 		AuthKey:   "testAuthKey",
@@ -227,7 +216,7 @@ func TestDns_GetRecordsWithRecordID(t *testing.T) {
 		Zones:      []Zone{{ID: "testZoneID", Name: "testZoneName"}},
 	}
 	// Get the records
-	dns.GetRecords()
+	dns.getRecords()
 	// Check the records
 	if len(dns.Records) != 1 {
 		t.Fatalf("GetRecords() = %d; want 1", len(dns.Records))
@@ -251,6 +240,8 @@ func TestDns_GetRecordsWithRecordID(t *testing.T) {
 
 // TestDns_UpdateRecord tests the UpdateRecord method
 func TestDns_UpdateRecord(t *testing.T) {
+	logger, _ := zap.NewDevelopment()
+	zap.ReplaceGlobals(logger)
 	// Create a new config object
 	cfg := &config.Config{
 		AuthKey: "testAuthKey",
@@ -259,7 +250,7 @@ func TestDns_UpdateRecord(t *testing.T) {
 	// Create a new mock client
 	mockClient := &mocks.MockClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			json := `{"success":true,"errors":[],"messages":[],"result":{}}`
+			json := `{"success":true,"errors":[],"messages":[],"result":{"id":"testRecordID", "name": "testRecordName", "type": "A", "content": "testIPNew"}}`
 			body := io.NopCloser(bytes.NewReader([]byte(json)))
 			return &http.Response{
 				StatusCode: 200,
@@ -271,7 +262,6 @@ func TestDns_UpdateRecord(t *testing.T) {
 	dns := &CFDNS{
 		Cfg:        cfg,
 		HTTPClient: mockClient,
-		CurrentIP:  "testIPNew",
 		Records: map[string][]Record{
 			"testZoneID": {
 				{
@@ -284,7 +274,10 @@ func TestDns_UpdateRecord(t *testing.T) {
 		},
 	}
 	// Update the records
-	updatedRecords := dns.UpdateRecords()
+	updatedRecords, err := dns.UpdateRecords("testIPNew")
+	if err != nil {
+		t.Fatalf("UpdateRecords() = %v; want nil", err)
+	}
 	// Check the records
 	if len(updatedRecords) != 1 {
 		t.Fatalf("UpdateRecords() = %d; want 1", len(updatedRecords))

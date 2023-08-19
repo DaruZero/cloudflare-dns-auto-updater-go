@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/config"
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/pkg/utils"
@@ -21,7 +20,6 @@ type CFDNS struct {
 	HTTPClient HTTPClient
 	Cfg        *config.Config
 	Records    map[string][]Record
-	CurrentIP  string
 	Zones      []Zone
 }
 
@@ -56,28 +54,29 @@ func New(cfg *config.Config) *CFDNS {
 		Cfg: cfg,
 	}
 
-	dns.HTTPClient = &http.Client{}
+	dns.HTTPClient = http.DefaultClient
 
 	if len(cfg.ZoneIDs) > 0 {
-		dns.CheckZoneIDs()
+		dns.checkZoneIDs()
 	} else {
-		dns.GetZoneIDs()
+		dns.getZoneIDs()
 	}
 
-	dns.GetCurrentIP()
-
 	dns.Records = make(map[string][]Record)
-	dns.GetRecords()
+	dns.getRecords()
 
 	return dns
 }
 
 // CheckZoneIDs checks if the zone ids are valid
-func (dns *CFDNS) CheckZoneIDs() {
+func (dns *CFDNS) checkZoneIDs() {
 	zap.S().Info("Getting zones info")
 	reqURL := "https://api.cloudflare.com/client/v4/zones/"
 
-	req := createCFRequest(http.MethodGet, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, nil)
+	req, err := createCFRequest(http.MethodGet, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, nil)
+	if err != nil {
+		zap.S().Fatal(err)
+	}
 
 	res, err := dns.HTTPClient.Do(req)
 	if err != nil {
@@ -92,10 +91,13 @@ func (dns *CFDNS) CheckZoneIDs() {
 	}
 
 	var resBody ResponseBody
-	unmarshalResponse(res.Body, &resBody)
+	err = unmarshalResponse(res.Body, &resBody)
+	if err != nil {
+		zap.S().Fatal(err)
+	}
 	res.Body.Close()
 
-	if !resBody.Success || res.StatusCode != 200 {
+	if !resBody.Success || res.StatusCode != http.StatusOK {
 		zap.S().Errorf("Error checking zone id, skipping. HTTP status code: %d. Response body: %v", res.StatusCode, resBody)
 	}
 
@@ -122,12 +124,15 @@ func (dns *CFDNS) CheckZoneIDs() {
 }
 
 // GetZoneIDs gets the zone id from the zone name
-func (dns *CFDNS) GetZoneIDs() {
+func (dns *CFDNS) getZoneIDs() {
 	for _, zoneName := range dns.Cfg.ZoneNames {
 		zap.S().Infof("Getting zone id for %s", zoneName)
 		reqURL := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones?name=%s", zoneName)
 
-		req := createCFRequest(http.MethodGet, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, nil)
+		req, err := createCFRequest(http.MethodGet, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, nil)
+		if err != nil {
+			zap.S().Fatal(err)
+		}
 
 		res, err := dns.HTTPClient.Do(req)
 		if err != nil {
@@ -142,10 +147,13 @@ func (dns *CFDNS) GetZoneIDs() {
 		}
 
 		var resBody ResponseBody
-		unmarshalResponse(res.Body, &resBody)
+		err = unmarshalResponse(res.Body, &resBody)
+		if err != nil {
+			zap.S().Fatal(err)
+		}
 		res.Body.Close()
 
-		if !resBody.Success || res.StatusCode != 200 {
+		if !resBody.Success || res.StatusCode != http.StatusOK {
 			zap.S().Errorf("Error getting zone id, skipping. HTTP status code: %d. Response body: %v", res.StatusCode, resBody)
 		}
 
@@ -166,49 +174,16 @@ func (dns *CFDNS) GetZoneIDs() {
 	}
 }
 
-// GetCurrentIP gets the current ip address
-func (dns *CFDNS) GetCurrentIP() {
-	zap.S().Info("Getting current ip")
-	reqURL := "https://api.ipify.org"
-	timeout := time.Duration(5)
-
-	for {
-		req := createRequest(http.MethodGet, reqURL, nil)
-
-		res, err := dns.HTTPClient.Do(req)
-		if err != nil {
-			zap.S().Fatal(err)
-		}
-
-		if res.StatusCode != 200 {
-			zap.S().Error("Error getting current ip, retrying in 5 seconds")
-			time.Sleep(timeout * time.Second)
-			timeout *= 2
-			continue
-		}
-
-		var bodyString string
-		bodyBytes, err := io.ReadAll(res.Body)
-		if err != nil {
-			zap.S().Fatal(err)
-		}
-		bodyString = string(bodyBytes)
-		res.Body.Close()
-
-		zap.S().Info("Successfully got current ip")
-
-		dns.CurrentIP = bodyString
-		return
-	}
-}
-
-// GetRecords gets all the records for the zone
-func (dns *CFDNS) GetRecords() {
+// getRecords gets all the records for the zone
+func (dns *CFDNS) getRecords() {
 	zap.S().Info("Getting records")
 	for _, zone := range dns.Zones {
 		reqURL := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/dns_records", zone.ID)
 
-		req := createCFRequest(http.MethodGet, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, nil)
+		req, err := createCFRequest(http.MethodGet, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, nil)
+		if err != nil {
+			zap.S().Fatal(err)
+		}
 
 		res, err := dns.HTTPClient.Do(req)
 		if err != nil {
@@ -223,10 +198,13 @@ func (dns *CFDNS) GetRecords() {
 		}
 
 		var resBody ResponseBody
-		unmarshalResponse(res.Body, &resBody)
+		err = unmarshalResponse(res.Body, &resBody)
+		if err != nil {
+			zap.S().Fatal(err)
+		}
 		res.Body.Close()
 
-		if !resBody.Success || res.StatusCode != 200 {
+		if !resBody.Success || res.StatusCode != http.StatusOK {
 			zap.S().Fatalf("Error getting records. HTTP status code: %d. Response body: %v", res.StatusCode, resBody)
 		}
 
@@ -267,77 +245,83 @@ func (dns *CFDNS) GetRecords() {
 }
 
 // UpdateRecords updates the records with the current ip
-func (dns *CFDNS) UpdateRecords() (updatedRecords map[string][]string) {
+func (dns *CFDNS) UpdateRecords(currentIP string) (updatedRecords map[string][]string, err error) {
 	zap.S().Info("Checking records")
 	updatedRecords = make(map[string][]string)
 
 	for zoneName, records := range dns.Records {
-		for _, record := range records {
-			if record.Content != dns.CurrentIP {
-				zap.S().Infof("Updating record %s", record.Name)
-				reqURL := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/dns_records/%s", record.ZoneID, record.ID)
+		for i, record := range records {
+			zap.S().Infof("Updating record %s", record.Name)
+			reqURL := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/dns_records/%s", record.ZoneID, record.ID)
 
-				payload := strings.NewReader(fmt.Sprintf(`{"content":"%s"}`, dns.CurrentIP))
-				req := createCFRequest(http.MethodPatch, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, payload)
-
-				res, err := dns.HTTPClient.Do(req)
-				if err != nil {
-					zap.S().Fatal(err)
-				}
-
-				type ResponseBody struct {
-					Result   Record    `json:"result"`
-					Errors   []Error   `json:"errors"`
-					Messages []Message `json:"messages"`
-					Success  bool      `json:"success"`
-				}
-
-				var resBody ResponseBody
-				unmarshalResponse(res.Body, &resBody)
-				res.Body.Close()
-
-				if !resBody.Success || res.StatusCode != 200 {
-					zap.S().Fatalf("Error updating record. HTTP status code: %d. Response body: %v", res.StatusCode, resBody)
-				}
-
-				updatedRecords[zoneName] = append(updatedRecords[zoneName], record.Name)
+			payload := strings.NewReader(fmt.Sprintf(`{"content":"%s"}`, currentIP))
+			req, err := createCFRequest(http.MethodPatch, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, payload)
+			if err != nil {
+				zap.S().Fatal(err)
+				return updatedRecords, err
 			}
+
+			res, err := dns.HTTPClient.Do(req)
+			if err != nil {
+				zap.S().Fatal(err)
+				return updatedRecords, err
+			}
+
+			type ResponseBody struct {
+				Result   Record    `json:"result"`
+				Errors   []Error   `json:"errors"`
+				Messages []Message `json:"messages"`
+				Success  bool      `json:"success"`
+			}
+
+			var resBody ResponseBody
+			err = unmarshalResponse(res.Body, &resBody)
+			if err != nil {
+				zap.S().Fatal(err)
+				return updatedRecords, err
+			}
+			res.Body.Close()
+			zap.S().Debugf("Response body: %+v", resBody)
+
+			if !resBody.Success || res.StatusCode != http.StatusOK {
+				zap.S().Fatalf("Error updating record. HTTP status code: %d. Response body: %v", res.StatusCode, resBody)
+				return updatedRecords, err
+			}
+
+			records[i] = resBody.Result
+
+			updatedRecords[zoneName] = append(updatedRecords[zoneName], record.Name)
 		}
 	}
 
-	return updatedRecords
-}
-
-// createRequest creates an HTTP request
-func createRequest(method, url string, body io.Reader) *http.Request {
-	req, err := http.NewRequest(method, url, body)
-	if err != nil {
-		zap.S().Fatal(err)
-	}
-
-	return req
+	return updatedRecords, nil
 }
 
 // createCFRequest creates an HTTP request with the cloudflare headers
-func createCFRequest(method, url, email, authKey string, body io.Reader) *http.Request {
-	req := createRequest(method, url, body)
+func createCFRequest(method, url, email, authKey string, body io.Reader) (req *http.Request, err error) {
+	req, err = http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
 
 	req.Header.Set("X-Auth-Email", email)
 	req.Header.Set("X-Auth-Key", authKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	return req
+	return req, nil
 }
 
 // unmarshalResponse unmarshals the response body into the given interface
-func unmarshalResponse(reader io.Reader, v interface{}) {
+func unmarshalResponse(reader io.Reader, v interface{}) (err error) {
 	bodyBytes, err := io.ReadAll(reader)
 	if err != nil {
-		zap.S().Fatal(err)
+		return err
 	}
 
 	err = json.Unmarshal(bodyBytes, v)
 	if err != nil {
-		zap.S().Fatal(err)
+		return err
 	}
+
+	return nil
 }
