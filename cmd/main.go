@@ -37,9 +37,15 @@ func main() {
 	go getCurrentIp(ctx, currentIpChan)
 	lastIp := ""
 
-	cfg := config.New()
+	cfg, err := config.New()
+	if err != nil {
+		zap.S().Fatal(err)
+	}
 
-	dns := dnsapi.New(cfg)
+	dns, err := dnsapi.New(cfg)
+	if err != nil {
+		zap.S().Fatal(err)
+	}
 
 	var notify *notifier.Notifier
 	if cfg.SenderAddress != "" && cfg.SenderPassword != "" && cfg.ReceiverAddress != "" {
@@ -81,16 +87,16 @@ func getCurrentIp(ctx context.Context, currentIpChan chan<- string) {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		zap.S().Fatal(err)
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			req, err := http.NewRequest(http.MethodGet, url, nil)
-			if err != nil {
-				zap.S().Fatal(err)
-			}
-
 			res, err := http.DefaultClient.Do(req)
 			if err != nil {
 				zap.S().Fatal(err)

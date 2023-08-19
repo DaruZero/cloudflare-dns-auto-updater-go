@@ -2,6 +2,7 @@ package dnsapi
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -48,39 +49,48 @@ type Message struct {
 }
 
 // New creates a new Dns struct instance
-func New(cfg *config.Config) *CFDNS {
+func New(cfg *config.Config) (dns *CFDNS, err error) {
 	zap.S().Debug("Creating new Dns struct")
-	dns := &CFDNS{
+	dns = &CFDNS{
 		Cfg: cfg,
 	}
 
 	dns.HTTPClient = http.DefaultClient
 
 	if len(cfg.ZoneIDs) > 0 {
-		dns.checkZoneIDs()
+		err = dns.checkZoneIDs()
+		if err != nil {
+			return dns, err
+		}
 	} else {
-		dns.getZoneIDs()
+		err = dns.getZoneIDs()
+		if err != nil {
+			return dns, err
+		}
 	}
 
 	dns.Records = make(map[string][]Record)
-	dns.getRecords()
+	err = dns.getRecords()
+	if err != nil {
+		return dns, err
+	}
 
-	return dns
+	return dns, nil
 }
 
 // CheckZoneIDs checks if the zone ids are valid
-func (dns *CFDNS) checkZoneIDs() {
+func (dns *CFDNS) checkZoneIDs() (err error) {
 	zap.S().Info("Getting zones info")
 	reqURL := "https://api.cloudflare.com/client/v4/zones/"
 
 	req, err := createCFRequest(http.MethodGet, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, nil)
 	if err != nil {
-		zap.S().Fatal(err)
+		return err
 	}
 
 	res, err := dns.HTTPClient.Do(req)
 	if err != nil {
-		zap.S().Fatal(err)
+		return err
 	}
 
 	type ResponseBody struct {
@@ -93,7 +103,7 @@ func (dns *CFDNS) checkZoneIDs() {
 	var resBody ResponseBody
 	err = unmarshalResponse(res.Body, &resBody)
 	if err != nil {
-		zap.S().Fatal(err)
+		return err
 	}
 	res.Body.Close()
 
@@ -119,24 +129,26 @@ func (dns *CFDNS) checkZoneIDs() {
 	}
 
 	if len(dns.Zones) == 0 {
-		zap.S().Fatal("No valid zone ids found")
+		return errors.New("no valid zone ids found")
 	}
+
+	return nil
 }
 
 // GetZoneIDs gets the zone id from the zone name
-func (dns *CFDNS) getZoneIDs() {
+func (dns *CFDNS) getZoneIDs() (err error) {
 	for _, zoneName := range dns.Cfg.ZoneNames {
 		zap.S().Infof("Getting zone id for %s", zoneName)
 		reqURL := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones?name=%s", zoneName)
 
 		req, err := createCFRequest(http.MethodGet, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, nil)
 		if err != nil {
-			zap.S().Fatal(err)
+			return err
 		}
 
 		res, err := dns.HTTPClient.Do(req)
 		if err != nil {
-			zap.S().Fatal(err)
+			return err
 		}
 
 		type ResponseBody struct {
@@ -149,7 +161,7 @@ func (dns *CFDNS) getZoneIDs() {
 		var resBody ResponseBody
 		err = unmarshalResponse(res.Body, &resBody)
 		if err != nil {
-			zap.S().Fatal(err)
+			return err
 		}
 		res.Body.Close()
 
@@ -170,24 +182,26 @@ func (dns *CFDNS) getZoneIDs() {
 	}
 
 	if len(dns.Zones) == 0 {
-		zap.S().Fatal("No zone ids found")
+		return errors.New("no zone ids found")
 	}
+
+	return nil
 }
 
 // getRecords gets all the records for the zone
-func (dns *CFDNS) getRecords() {
+func (dns *CFDNS) getRecords() (err error) {
 	zap.S().Info("Getting records")
 	for _, zone := range dns.Zones {
 		reqURL := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/dns_records", zone.ID)
 
 		req, err := createCFRequest(http.MethodGet, reqURL, dns.Cfg.Email, dns.Cfg.AuthKey, nil)
 		if err != nil {
-			zap.S().Fatal(err)
+			return err
 		}
 
 		res, err := dns.HTTPClient.Do(req)
 		if err != nil {
-			zap.S().Fatal(err)
+			return err
 		}
 
 		type ResponseBody struct {
@@ -200,16 +214,17 @@ func (dns *CFDNS) getRecords() {
 		var resBody ResponseBody
 		err = unmarshalResponse(res.Body, &resBody)
 		if err != nil {
-			zap.S().Fatal(err)
+			return err
 		}
 		res.Body.Close()
 
 		if !resBody.Success || res.StatusCode != http.StatusOK {
-			zap.S().Fatalf("Error getting records. HTTP status code: %d. Response body: %v", res.StatusCode, resBody)
+			strErr := fmt.Sprintf("Error getting records for zone %s. HTTP status code: %d. Response body: %v", zone.Name, res.StatusCode, resBody)
+			return errors.New(strErr)
 		}
 
 		if len(resBody.Result) == 0 {
-			zap.S().Fatalf("No records found for zone id %s", zone.Name)
+			return errors.New("no records found")
 		}
 
 		recordsMap := make(map[string]Record)
@@ -217,6 +232,11 @@ func (dns *CFDNS) getRecords() {
 			if record.Type == "A" && (len(dns.Cfg.RecordIDs) == 0 || utils.StringInSlice(record.ID, dns.Cfg.RecordIDs)) {
 				recordsMap[record.Name] = record
 			}
+		}
+
+		if len(recordsMap) == 0 {
+			zap.S().Errorf("No records found for zone %s", zone.Name)
+			continue
 		}
 
 		if _, ok := dns.Records[zone.Name]; !ok {
@@ -234,14 +254,13 @@ func (dns *CFDNS) getRecords() {
 			dns.Records[zone.Name] = append(dns.Records[zone.Name], newRecord)
 		}
 
-		if len(dns.Records[zone.Name]) == 0 {
-			zap.S().Errorf("No records found for zone %s", zone.Name)
-		}
 	}
 
 	if len(dns.Records) == 0 {
-		zap.S().Fatal("No records found")
+		return errors.New("no records found")
 	}
+
+	return nil
 }
 
 // UpdateRecords updates the records with the current ip
@@ -284,8 +303,8 @@ func (dns *CFDNS) UpdateRecords(currentIP string) (updatedRecords map[string][]s
 			zap.S().Debugf("Response body: %+v", resBody)
 
 			if !resBody.Success || res.StatusCode != http.StatusOK {
-				zap.S().Fatalf("Error updating record. HTTP status code: %d. Response body: %v", res.StatusCode, resBody)
-				return updatedRecords, err
+				strErr := fmt.Sprintf("Error updating record %s. HTTP status code: %d. Response body: %v", record.Name, res.StatusCode, resBody)
+				return updatedRecords, errors.New(strErr)
 			}
 
 			records[i] = resBody.Result

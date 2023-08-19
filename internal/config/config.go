@@ -1,6 +1,8 @@
 package config
 
 import (
+	"errors"
+
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/pkg/env"
 	"go.uber.org/zap"
 )
@@ -17,9 +19,9 @@ type Config struct {
 	CheckInterval   int
 }
 
-func New() *Config {
+func New() (config *Config, err error) {
 	zap.S().Info("Loading configuration")
-	config := &Config{
+	config = &Config{
 		AuthKey:         env.GetEnv("AUTH_KEY", true, ""),
 		CheckInterval:   env.GetEnvAsInt("CHECK_INTERVAL", false, 86400),
 		Email:           env.GetEnv("EMAIL", true, ""),
@@ -33,8 +35,8 @@ func New() *Config {
 	zap.S().Debug("Config loaded")
 
 	if len(config.ZoneIDs) == 0 && len(config.ZoneNames) == 0 {
-		zap.S().Fatal("Either ZONE_ID or ZONE_NAME is required")
+		return config, errors.New("no zone ids or zone names provided")
 	}
 
-	return config
+	return config, nil
 }
