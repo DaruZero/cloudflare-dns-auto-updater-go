@@ -2,169 +2,254 @@ package env
 
 import (
 	"os"
+	"os/exec"
 	"testing"
 )
 
-const testString = "test"
+const (
+	testKey    = "TEST_ENV"
+	testString = "test"
+	testSlice  = "test1,test2,test3"
+)
 
-// TestGetEnvRequired tests the GetEnv function with a required environment variable
-func TestGetEnvRequired(t *testing.T) {
-	// Set the environment variable
-	err := os.Setenv("TEST_ENV", testString)
+func setup(value string) {
+	err := os.Setenv("TEST_ENV", value)
 	if err != nil {
-		t.Errorf("Error setting environment variable: %s", err)
-	}
-
-	// Get the environment variable
-	value := GetEnv("TEST_ENV", true, "")
-
-	// Check the value
-	if value != testString {
-		t.Errorf("GetEnv() = %s; want test", value)
+		panic(err)
 	}
 }
 
-// TestGetEnvNotRequired tests the GetEnv function with a not required environment variable
-func TestGetEnvNotRequired(t *testing.T) {
-	// Set the environment variable
-	err := os.Setenv("TEST_ENV", testString)
+func teardown() {
+	err := os.Unsetenv("TEST_ENV")
 	if err != nil {
-		t.Errorf("Error setting environment variable: %s", err)
-	}
-
-	// Get the environment variable
-	value := GetEnv("TEST_ENV", false, "")
-
-	// Check the value
-	if value != testString {
-		t.Errorf("GetEnv() = %s; want test", value)
+		panic(err)
 	}
 }
 
-// TestGetEnvNotRequired tests the GetEnv function with a not required environment variable
-func TestGetEnvNotRequiredFallback(t *testing.T) {
-	// Get the environment variable
-	value := GetEnv("TEST_ENV", false, testString)
+func TestGetEnv(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		value    string
+		required bool
+		fallback string
+		expected string
+		wantExit bool
+	}{
+		{
+			name:     "Required",
+			key:      testKey,
+			value:    testString,
+			required: true,
+			fallback: "",
+			expected: testString,
+			wantExit: false,
+		},
+		{
+			name:     "RequiredMissing",
+			key:      testKey,
+			value:    "",
+			required: true,
+			fallback: "",
+			expected: "",
+			wantExit: true,
+		},
+		{
+			name:     "NotRequired",
+			key:      testKey,
+			value:    "",
+			required: false,
+			fallback: "",
+			expected: "",
+			wantExit: false,
+		},
+		{
+			name:     "NotRequiredWithFallback",
+			key:      testKey,
+			value:    "",
+			required: false,
+			fallback: testString,
+			expected: testString,
+			wantExit: false,
+		},
+		// Add more test cases here
+	}
 
-	// Check the value
-	if value != testString {
-		t.Errorf("GetEnv() = %s; want test", value)
+	for _, tt := range tests {
+		setup(tt.value)
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.wantExit {
+				if os.Getenv("BE_CRASHER") == "1" {
+					GetEnv(tt.key, tt.required, tt.fallback)
+					return
+				}
+				cmd := exec.Command(os.Args[0], "-test.run=TestGetEnv")
+				cmd.Env = append(os.Environ(), "BE_CRASHER=1")
+				err := cmd.Run()
+				if e, ok := err.(*exec.ExitError); ok && !e.Success() {
+					return
+				}
+				t.Fatalf("process ran with err %v, want exit status 1", err)
+			}
+
+			value := GetEnv(tt.key, tt.required, tt.fallback)
+
+			if value != tt.expected {
+				t.Errorf("Function() = %s; want %s", value, tt.expected)
+			}
+		})
+		teardown()
 	}
 }
 
-// TestGetEnvAsIntRequired tests the GetEnvAsInt function with a required environment variable
-func TestGetEnvAsIntRequired(t *testing.T) {
-	// Set the environment variable
-	err := os.Setenv("TEST_ENV", "1")
-	if err != nil {
-		t.Errorf("Error setting environment variable: %s", err)
+func TestGetEnvAsInt(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		value    string
+		required bool
+		fallback int
+		expected int
+		wantExit bool
+	}{
+		{
+			name:     "Required",
+			key:      testKey,
+			value:    "1",
+			required: true,
+			fallback: 0,
+			expected: 1,
+			wantExit: false,
+		},
+		{
+			name:     "RequiredMissing",
+			key:      testKey,
+			value:    "",
+			required: true,
+			fallback: 0,
+			expected: 1,
+			wantExit: true,
+		},
+		{
+			name:     "NotRequired",
+			key:      testKey,
+			value:    "1",
+			required: false,
+			fallback: 0,
+			expected: 1,
+			wantExit: false,
+		},
+		{
+			name:     "NotRequiredWithFallback",
+			key:      testKey,
+			value:    "",
+			required: false,
+			fallback: 1,
+			expected: 1,
+			wantExit: false,
+		},
+		// Add more test cases here
 	}
 
-	// Get the environment variable
-	value := GetEnvAsInt("TEST_ENV", true, 0)
+	for _, tt := range tests {
+		setup(tt.value)
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.wantExit {
+				if os.Getenv("BE_CRASHER") == "1" {
+					GetEnvAsInt(tt.key, tt.required, tt.fallback)
+					return
+				}
+				cmd := exec.Command(os.Args[0], "-test.run=TestGetEnv")
+				cmd.Env = append(os.Environ(), "BE_CRASHER=1")
+				err := cmd.Run()
+				if e, ok := err.(*exec.ExitError); ok && !e.Success() {
+					return
+				}
+				t.Fatalf("process ran with err %v, want exit status 1", err)
+			}
 
-	// Check the value
-	if value != 1 {
-		t.Errorf("GetEnvAsInt() = %d; want 1", value)
+			value := GetEnvAsInt(tt.key, tt.required, tt.fallback)
+
+			if value != tt.expected {
+				t.Errorf("Function() = %d; want %d", value, tt.expected)
+			}
+		})
+		teardown()
 	}
 }
 
-// TestGetEnvAsIntNotRequired tests the GetEnvAsInt function with a not required environment variable
-func TestGetEnvAsIntNotRequired(t *testing.T) {
-	// Set the environment variable
-	err := os.Setenv("TEST_ENV", "1")
-	if err != nil {
-		t.Errorf("Error setting environment variable: %s", err)
+func TestGetEnvAsStringSlice(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		value    string
+		required bool
+		fallback []string
+		expected []string
+		wantExit bool
+	}{
+		{
+			name:     "Required",
+			key:      testKey,
+			value:    testSlice,
+			required: true,
+			fallback: []string{},
+			expected: []string{"test1", "test2", "test3"},
+			wantExit: false,
+		},
+		{
+			name:     "RequiredMissing",
+			key:      testKey,
+			value:    "",
+			required: true,
+			fallback: []string{},
+			expected: []string{},
+			wantExit: true,
+		},
+		{
+			name:     "NotRequired",
+			key:      testKey,
+			value:    testSlice,
+			required: false,
+			fallback: []string{},
+			expected: []string{"test1", "test2", "test3"},
+			wantExit: false,
+		},
+		{
+			name:     "NotRequiredWithFallback",
+			key:      testKey,
+			value:    "",
+			required: false,
+			fallback: []string{"test1", "test2", "test3"},
+			expected: []string{"test1", "test2", "test3"},
+			wantExit: false,
+		},
+		// Add more test cases here
 	}
 
-	// Get the environment variable
-	value := GetEnvAsInt("TEST_ENV", false, 0)
+	for _, tt := range tests {
+		setup(tt.value)
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.wantExit {
+				if os.Getenv("BE_CRASHER") == "1" {
+					GetEnvAsStringSlice(tt.key, tt.required, tt.fallback)
+					return
+				}
+				cmd := exec.Command(os.Args[0], "-test.run=TestGetEnv")
+				cmd.Env = append(os.Environ(), "BE_CRASHER=1")
+				err := cmd.Run()
+				if e, ok := err.(*exec.ExitError); ok && !e.Success() {
+					return
+				}
+				t.Fatalf("process ran with err %v, want exit status 1", err)
+			}
 
-	// Check the value
-	if value != 1 {
-		t.Errorf("GetEnvAsInt() = %d; want 1", value)
-	}
-}
+			value := GetEnvAsStringSlice(tt.key, tt.required, tt.fallback)
 
-// TestGetEnvAsIntNotRequired tests the GetEnvAsInt function with a not required environment variable
-func TestGetEnvAsIntNotRequiredFallback(t *testing.T) {
-	// Get the environment variable
-	value := GetEnvAsInt("TEST_ENV", false, 1)
-
-	// Check the value
-	if value != 1 {
-		t.Errorf("GetEnvAsInt() = %d; want 1", value)
-	}
-}
-
-// TestGetEnvAsStringSliceRequired tests the GetEnvAsStringSlice function with a required environment variable
-func TestGetEnvAsStringSliceRequired(t *testing.T) {
-	// Set the environment variable
-	err := os.Setenv("TEST_ENV", "1,2,3")
-	if err != nil {
-		t.Errorf("Error setting environment variable: %s", err)
-	}
-
-	// Get the environment variable
-	value := GetEnvAsStringSlice("TEST_ENV", true, nil)
-
-	// Check the value
-	if len(value) != 3 {
-		t.Errorf("GetEnvAsStringSlice() = %d; want 3", len(value))
-	}
-	if value[0] != "1" {
-		t.Errorf("GetEnvAsStringSlice() = %s; want 1", value[0])
-	}
-	if value[1] != "2" {
-		t.Errorf("GetEnvAsStringSlice() = %s; want 2", value[1])
-	}
-	if value[2] != "3" {
-		t.Errorf("GetEnvAsStringSlice() = %s; want 3", value[2])
-	}
-}
-
-// TestGetEnvAsStringSliceNotRequired tests the GetEnvAsStringSlice function with a not required environment variable
-func TestGetEnvAsStringSliceNotRequired(t *testing.T) {
-	// Set the environment variable
-	err := os.Setenv("TEST_ENV", "1,2,3")
-	if err != nil {
-		t.Errorf("Error setting environment variable: %s", err)
-	}
-
-	// Get the environment variable
-	value := GetEnvAsStringSlice("TEST_ENV", false, nil)
-
-	// Check the value
-	if len(value) != 3 {
-		t.Errorf("GetEnvAsStringSlice() = %d; want 3", len(value))
-	}
-	if value[0] != "1" {
-		t.Errorf("GetEnvAsStringSlice() = %s; want 1", value[0])
-	}
-	if value[1] != "2" {
-		t.Errorf("GetEnvAsStringSlice() = %s; want 2", value[1])
-	}
-	if value[2] != "3" {
-		t.Errorf("GetEnvAsStringSlice() = %s; want 3", value[2])
-	}
-}
-
-// TestGetEnvAsStringSliceNotRequired tests the GetEnvAsStringSlice function with a not required environment variable
-func TestGetEnvAsStringSliceNotRequiredFallback(t *testing.T) {
-	// Get the environment variable
-	value := GetEnvAsStringSlice("TEST_ENV", false, []string{"1", "2", "3"})
-
-	// Check the value
-	if len(value) != 3 {
-		t.Errorf("GetEnvAsStringSlice() = %d; want 3", len(value))
-	}
-	if value[0] != "1" {
-		t.Errorf("GetEnvAsStringSlice() = %s; want 1", value[0])
-	}
-	if value[1] != "2" {
-		t.Errorf("GetEnvAsStringSlice() = %s; want 2", value[1])
-	}
-	if value[2] != "3" {
-		t.Errorf("GetEnvAsStringSlice() = %s; want 3", value[2])
+			if len(value) != len(tt.expected) {
+				t.Errorf("Function() = %v; want %v", value, tt.expected)
+			}
+		})
+		teardown()
 	}
 }
