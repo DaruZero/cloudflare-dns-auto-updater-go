@@ -1,6 +1,13 @@
 package main
 
 import (
+	"context"
+	"io"
+	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/cmd/dnsapi"
@@ -21,9 +28,24 @@ func main() {
 
 	zap.S().Info("Starting Cloudflare CFDNS Auto Updater")
 
-	cfg := config.New()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	dns := dnsapi.New(cfg)
+	var wg sync.WaitGroup
+
+	currentIpChan := make(chan string)
+	go getCurrentIp(ctx, currentIpChan)
+	lastIp := ""
+
+	cfg, err := config.New()
+	if err != nil {
+		zap.S().Fatal(err)
+	}
+
+	dns, err := dnsapi.New(cfg)
+	if err != nil {
+		zap.S().Fatal(err)
+	}
 
 	var notify *notifier.Notifier
 	if cfg.SenderAddress != "" && cfg.SenderPassword != "" && cfg.ReceiverAddress != "" {
@@ -31,23 +53,69 @@ func main() {
 	}
 
 	for {
-		updatedRecords := dns.UpdateRecords()
-		if len(updatedRecords) > 0 {
-			zap.S().Infof("Updated %d records", len(updatedRecords))
-			if notify != nil {
-				err := notify.SendEmail(updatedRecords, dns.CurrentIP)
-				if err != nil {
-					zap.S().Errorf("Error sending email: %s", err)
-				}
+		select {
+		case ip := <-currentIpChan:
+			if ip != lastIp {
+				zap.S().Infof("New IP detected: %s", ip)
+				lastIp = ip
+				wg.Add(1)
+				go func(ip string) {
+					defer wg.Done()
+					if updatedRecords, err := dns.UpdateRecords(ip); err == nil {
+						if notify != nil {
+							wg.Add(1)
+							go func(updatedRecords map[string][]string) {
+								defer wg.Done()
+								notify.SendEmail(updatedRecords, ip)
+							}(updatedRecords)
+						}
+					}
+				}(ip)
 			}
-		} else {
-			zap.S().Info("No records updated")
+		case <-ctx.Done():
+			zap.S().Info("Shutting down...")
+			wg.Wait()
+			return
 		}
+	}
+}
 
-		zap.S().Infof("Sleeping for %d seconds", cfg.CheckInterval)
-		time.Sleep(time.Duration(cfg.CheckInterval) * time.Second)
+// getCurrentIp fetches the current public ip address every second,
+// and sends it to the currentIpChan channel
+func getCurrentIp(ctx context.Context, currentIpChan chan<- string) {
+	url := "https://api.ipify.org"
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 
-		dns.GetCurrentIP()
-		dns.GetRecords()
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		zap.S().Fatal(err)
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			res, err := http.DefaultClient.Do(req)
+			if err != nil {
+				zap.S().Fatal(err)
+			}
+
+			if res.StatusCode != http.StatusOK {
+				zap.S().Error("Error getting current ip. Status code: %d", res.StatusCode)
+				continue
+			}
+
+			var bodyString string
+			bodyBytes, err := io.ReadAll(res.Body)
+			if err != nil {
+				zap.S().Fatal(err)
+			}
+			bodyString = string(bodyBytes)
+			res.Body.Close()
+
+			currentIpChan <- bodyString
+		}
 	}
 }
