@@ -20,9 +20,9 @@ func TestDns_checkZoneIDs(t *testing.T) {
 	tests := []struct {
 		name            string
 		mockResponse    string
-		expectedZones   int
 		expectedZoneIDs []string
 		expectedNames   []string
+		expectedZones   int
 		wantErr         bool
 	}{
 		{
@@ -100,9 +100,9 @@ func TestDns_getZoneIDs(t *testing.T) {
 	tests := []struct {
 		name            string
 		mockResponse    string
-		expectedZones   int
 		expectedZoneIDs []string
 		expectedNames   []string
+		expectedZones   int
 		wantErr         bool
 	}{
 		{
@@ -171,13 +171,13 @@ func TestDns_getZoneIDs(t *testing.T) {
 func TestDns_getRecords(t *testing.T) {
 	tests := []struct {
 		name                string
-		recordIDs           []string
 		mockResponse        string
-		expectedRecordsMaps int
+		recordIDs           []string
 		expectedRecordIDs   []string
 		expectedNames       []string
 		expectedTypes       []string
 		expectedContents    []string
+		expectedRecordsMaps int
 		wantErr             bool
 	}{
 		{
@@ -278,12 +278,12 @@ func TestDns_getRecords(t *testing.T) {
 
 func TestDns_UpdateRecord(t *testing.T) {
 	tests := []struct {
-		name            string
 		initialRecords  map[string][]Record
-		updateIP        string
-		mockResponse    string
 		expectedRecords map[string][]string
 		updatedRecords  map[string][]Record
+		name            string
+		updateIP        string
+		mockResponse    string
 		wantErr         bool
 	}{
 		{

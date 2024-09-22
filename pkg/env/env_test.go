@@ -31,9 +31,9 @@ func TestGetEnv(t *testing.T) {
 		name     string
 		key      string
 		value    string
-		required bool
 		fallback string
 		expected string
+		required bool
 		wantExit bool
 	}{
 		{
@@ -107,9 +107,9 @@ func TestGetEnvAsInt(t *testing.T) {
 		name     string
 		key      string
 		value    string
-		required bool
 		fallback int
 		expected int
+		required bool
 		wantExit bool
 	}{
 		{
@@ -183,9 +183,9 @@ func TestGetEnvAsStringSlice(t *testing.T) {
 		name     string
 		key      string
 		value    string
-		required bool
 		fallback []string
 		expected []string
+		required bool
 		wantExit bool
 	}{
 		{
