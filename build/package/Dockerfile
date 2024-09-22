@@ -1,4 +1,4 @@
-FROM docker.io/golang:1.20.7-alpine3.17 as builder
+FROM docker.io/golang:1.23.1-alpine as builder
 
 WORKDIR /go/src/github.com/daruzero/cloudflare-dns-autoupdater-go
 
