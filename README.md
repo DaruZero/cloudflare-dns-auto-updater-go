@@ -51,14 +51,14 @@ This is based on the [daruzero/cloudflare-dns-auto-updater](https://github.com/D
 
 | Variable    | Example value                                 | Description                                                                                                               |
 |-------------|-----------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| `EMAIL`     | johndoe@example.com                           | Email address associated with your CloudFlare account                                                                     |
-| `AUTH_KEY`  | c2547eb745079dac9320b638f5e225cf483cc5cfdda41 | Your CloudFlare Global API Key                                                                                            |
-| `ZONE_NAME` | example.com                                   | The domain name that you want to change the record of. You can update multiple domains separating them with a `,` (comma) |
-| `ZONE_ID`   | 372e67954025e0ba6aaa6d586b9e0b59              | The ID of the zone you want to change a record of. You can update multiple domains separating them with a `,` (comma)     |
+| `EMAIL`     | <johndoe@example.com>                           | Email address of your CloudFlare account                                                                     |
+| `AUTH_KEY`  | c2547eb745079dac9320b638f5e225cf483cc5cfdda41 | CloudFlare Global API Key                                                                                            |
+| `ZONE_NAME` | example.com                                   | Comma separated list of domains to update. |
+| `ZONE_ID`   | 372e67954025e0ba6aaa6d586b9e0b59              | Comma separated list of domain IDs to update     |
 
 > **Note:**
 >
-> - You only need to specify either `ZONE_ID` or `ZONE_NAME`. If you specify both, `ZONE_ID` will be used.
+> - You can set either `ZONE_ID` or `ZONE_NAME`. If you specify both, the value of `ZONE_ID` takes precedence.
 >
 
 #### Optional
@@ -67,23 +67,13 @@ This is based on the [daruzero/cloudflare-dns-auto-updater](https://github.com/D
 |--------------------|----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|---------|
 | `RECORD_ID`        | 372e67954025e0ba6aaa6d586b9e0b59 | The ID of the record you want to change. Leave blank to update all records of the zone.                                                    | -       |
 | `CHECK_INTERVAL`   | 86400                            | The amount of seconds the script should wait between checks                                                                                | `86400` |
-| `SENDER_ADDRESS`   | johndoe@example.com              | The address of the email sender. Must use Gmail SMTP server                                                                                | -       |
-| `SENDER_PASSWORD`  | supersecret                      | The password to authenticate the sender. Use an application password ([tutorial](https://support.google.com/accounts/answer/185833?hl=en)) | -       |
-| `RECEIVER_ADDRESS` | johndoe@example.com              | The address of the email receiver. Must use Gmail SMTP server                                                                              | -       |
-
-> **Note:**
->
-> - `SENDER_ADDRESS` and `RECEIVER_ADDRESS` can be the same.
+| `NOTIFICATION_URLS` | smtp://username:password@host:587/?fromAddress=<sender@example.com>&toAddresses=<recipient@example.com>              | Comma separated list of URLs as consumed by [`shoutrrr`](https://containrrr.dev/shoutrrr/v0.8/services/overview/)  | -       |
 
 ---
 
 ## Future implementation
 
 - [x] Possibility to update multiple domains
-- [ ] Support for other SMTP servers other than Google's
-- [ ] Support for other notification systems
-  - [ ] SMS
-  - [ ] Telegram
-  - [ ] Discord
-  - [ ] Slack
+- [x] Support for other SMTP servers other than Google's
+- [x] Support for other notification systems
 - [ ] Support for other DNS services
