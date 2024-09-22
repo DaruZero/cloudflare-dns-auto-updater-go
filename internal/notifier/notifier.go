@@ -1,59 +1,55 @@
 package notifier
 
 import (
-	"net/smtp"
-
+	"github.com/containrrr/shoutrrr"
+	"github.com/containrrr/shoutrrr/pkg/router"
+	"github.com/containrrr/shoutrrr/pkg/types"
 	"github.com/daruzero/cloudflare-dns-auto-updater-go/internal/config"
 	"go.uber.org/zap"
 )
 
 type Notifier struct {
-	Email Email
-}
-
-type Email struct {
-	SenderAddress   string
-	SenderPassword  string
-	ReceiverAddress string
-	SMTPServer      string
-	SMTPPort        string
+	Sender *router.ServiceRouter
 }
 
 // New creates a new Notifier
 func New(cfg *config.Config) *Notifier {
 	zap.S().Debug("Creating notifier")
+
+	if len(cfg.NotificationURLs) == 0 {
+		zap.S().Info("Notification URL not found, skipping.")
+		return nil
+	}
+
+	sender, err := shoutrrr.CreateSender(cfg.NotificationURLs...)
+	if err != nil {
+		zap.S().Error(err)
+		return nil
+	}
+
 	return &Notifier{
-		Email: Email{
-			SenderAddress:   cfg.SenderAddress,
-			SenderPassword:  cfg.SenderPassword,
-			ReceiverAddress: cfg.ReceiverAddress,
-			SMTPServer:      "smtp.gmail.com",
-			SMTPPort:        "587",
-		},
+		Sender: sender,
 	}
 }
 
-// SendEmail sends an email notification
-func (n *Notifier) SendEmail(updatedRecords map[string][]string, newIP string) error {
-	zap.S().Info("Sending email notification")
-	auth := smtp.PlainAuth("", n.Email.SenderAddress, n.Email.SenderPassword, n.Email.SMTPServer)
+func (n *Notifier) Send(updatedRecords map[string][]string, newIP string) {
+	zap.S().Info("Sending notifications")
 
-	to := []string{n.Email.ReceiverAddress}
-	msg := []byte("To: " + n.Email.ReceiverAddress + "\r\n" + "Subject: Public IP Address Changed\r\n" + "\r\n" + "Your IP address has changed to " + newIP + " for the following record(s):" + "\r\n")
+	errors := n.Sender.Send(formatMessage(updatedRecords, newIP), &types.Params{"title": "Public IP address changed"})
+	for _, err := range errors {
+		zap.S().Error(err)
+	}
+}
+
+func formatMessage(updatedRecords map[string][]string, newIP string) string {
+	msg := "Your IP address has changed to " + newIP + " for the following record(s):\r\n"
 
 	for zone, records := range updatedRecords {
-		msg = append(msg, []byte(zone+"\r\n")...)
+		msg = msg + zone + "\r\n"
 		for _, record := range records {
-			msg = append(msg, []byte("\t- "+record+"\r\n")...)
+			msg = msg + "\t- " + record + "\r\n"
 		}
 	}
 
-	err := smtp.SendMail(n.Email.SMTPServer+":"+n.Email.SMTPPort, auth, n.Email.SenderAddress, to, msg)
-	if err != nil {
-		return err
-	}
-
-	zap.S().Info("Email notification sent")
-
-	return nil
+	return msg
 }

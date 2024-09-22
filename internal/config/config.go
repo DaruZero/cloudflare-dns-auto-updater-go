@@ -8,29 +8,25 @@ import (
 )
 
 type Config struct {
-	AuthKey         string
-	Email           string
-	ReceiverAddress string
-	SenderAddress   string
-	SenderPassword  string
-	RecordIDs       []string
-	ZoneIDs         []string
-	ZoneNames       []string
-	CheckInterval   int
+	AuthKey          string
+	Email            string
+	NotificationURLs []string
+	RecordIDs        []string
+	ZoneIDs          []string
+	ZoneNames        []string
+	CheckInterval    int
 }
 
 func New() (config *Config, err error) {
 	zap.S().Info("Loading configuration")
 	config = &Config{
-		AuthKey:         env.GetEnv("AUTH_KEY", true, ""),
-		CheckInterval:   env.GetEnvAsInt("CHECK_INTERVAL", false, 86400),
-		Email:           env.GetEnv("EMAIL", true, ""),
-		ReceiverAddress: env.GetEnv("RECEIVER_ADDRESS", false, ""),
-		RecordIDs:       env.GetEnvAsStringSlice("RECORD_ID", false, []string{}),
-		SenderAddress:   env.GetEnv("SENDER_ADDRESS", false, ""),
-		SenderPassword:  env.GetEnv("SENDER_PASSWORD", false, ""),
-		ZoneIDs:         env.GetEnvAsStringSlice("ZONE_ID", false, []string{}),
-		ZoneNames:       env.GetEnvAsStringSlice("ZONE_NAME", false, []string{}),
+		AuthKey:          env.GetEnv("AUTH_KEY", true, ""),
+		CheckInterval:    env.GetEnvAsInt("CHECK_INTERVAL", false, 86400),
+		Email:            env.GetEnv("EMAIL", true, ""),
+		RecordIDs:        env.GetEnvAsStringSlice("RECORD_ID", false, []string{}),
+		ZoneIDs:          env.GetEnvAsStringSlice("ZONE_ID", false, []string{}),
+		ZoneNames:        env.GetEnvAsStringSlice("ZONE_NAME", false, []string{}),
+		NotificationURLs: env.GetEnvAsStringSlice("NOTIFICATION_URLS", false, []string{}),
 	}
 	zap.S().Debug("Config loaded")
 

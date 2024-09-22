@@ -47,10 +47,7 @@ func main() {
 		zap.S().Fatal(err)
 	}
 
-	var notify *notifier.Notifier
-	if cfg.SenderAddress != "" && cfg.SenderPassword != "" && cfg.ReceiverAddress != "" {
-		notify = notifier.New(cfg)
-	}
+	notify := notifier.New(cfg)
 
 	for {
 		select {
@@ -62,13 +59,15 @@ func main() {
 				go func(ip string) {
 					defer wg.Done()
 					if updatedRecords, err := dns.UpdateRecords(ip); err == nil {
-						if notify != nil {
-							wg.Add(1)
-							go func(updatedRecords map[string][]string) {
-								defer wg.Done()
-								notify.SendEmail(updatedRecords, ip)
-							}(updatedRecords)
+						if notify == nil {
+							zap.S().Debug("Skip sending notification")
+							return
 						}
+						wg.Add(1)
+						go func(updatedRecords map[string][]string) {
+							defer wg.Done()
+							notify.Send(updatedRecords, ip)
+						}(updatedRecords)
 					}
 				}(ip)
 			}
