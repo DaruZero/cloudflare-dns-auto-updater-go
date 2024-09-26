@@ -10,55 +10,15 @@ import (
 	"go.uber.org/zap"
 )
 
-type CFDNS struct {
+type CloudflareAPI struct {
 	Api     *cloudflare.API
 	Cfg     *config.Config
 	Records map[string][]cloudflare.DNSRecord
 	Zones   []cloudflare.Zone
 }
 
-// New creates a new Dns struct instance
-func New(cfg *config.Config) (dns *CFDNS, err error) {
-	zap.S().Debug("Creating new Dns struct")
-	dns = &CFDNS{
-		Cfg: cfg,
-	}
-
-	// Authenticate the APIs
-	dns.Api, err = cloudflare.New(dns.Cfg.AuthKey, dns.Cfg.Email)
-	if err != nil {
-		return nil, err
-	}
-
-	// Fetch all zones
-	allZones, err := dns.Api.ListZones(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	// Filter only the selected zones
-	for _, zone := range allZones {
-		if utils.StringInSlice(zone.ID, dns.Cfg.ZoneIDs) || utils.StringInSlice(zone.Name, dns.Cfg.ZoneNames) {
-			dns.Zones = append(dns.Zones, zone)
-		}
-	}
-
-	if len(dns.Zones) == 0 {
-		return nil, errors.New("no zones found")
-	}
-
-	// Get the zones records
-	dns.Records = make(map[string][]cloudflare.DNSRecord)
-	err = dns.getRecords()
-	if err != nil {
-		return dns, err
-	}
-
-	return dns, nil
-}
-
 // getRecords gets all the records for the zone
-func (dns *CFDNS) getRecords() (err error) {
+func (dns *CloudflareAPI) getRecords() (err error) {
 	zap.S().Info("Getting records")
 	for _, zone := range dns.Zones {
 		zap.S().Debugf("%+v", zone)
@@ -86,7 +46,7 @@ func (dns *CFDNS) getRecords() (err error) {
 }
 
 // UpdateRecords updates the records with the current ip
-func (dns *CFDNS) UpdateRecords(currentIP string) (updatedRecords map[string][]string, err error) {
+func (dns *CloudflareAPI) UpdateRecords(currentIP string) (updatedRecords map[string][]string, err error) {
 	if err := dns.getRecords(); err != nil {
 		return nil, err
 	}
